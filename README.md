@@ -11,18 +11,20 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Language**: Python 3.10+
 - **HTTP Client**: `requests` (Phase 02)
 - **HTML Parsing**: `beautifulsoup4` (Phase 03)
+- **Data Modeling**: Standard library `dataclasses` (Phase 04)
 - **Data Export & CLI**: Built-in `csv` module, standard library / `argparse`
 
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
 - **Phase 02 — Fetch Webpage**: COMPLETE
 - **Phase 03 — Parse HTML & Job Extraction**: COMPLETE
+- **Phase 04 — Job Data Model & Clean Data Flow**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
 - [x] **Phase 02 — Fetch Webpage** (COMPLETE)
 - [x] **Phase 03 — Parse HTML** (COMPLETE)
-- [ ] **Phase 04 — Job Data Model**
+- [x] **Phase 04 — Job Data Model** (COMPLETE)
 - [ ] **Phase 05 — CSV Export**
 - [ ] **Phase 06 — Refactoring & Error Handling**
 - [ ] **Phase 07 — CLI**
@@ -31,25 +33,45 @@ A Python-based web scraping application designed to extract, parse, model, and e
 
 ---
 
-## Scraper Architecture
+## Application Data Flow
 
-The scraper follows a modular separation of concerns:
+The scraper follows a clean, decoupled data pipeline:
 
 ```
 TARGET_URL
     ↓
 src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
     ↓
-HTML Text
+HTML Response Text
     ↓
-src/parser.py (parse_jobs)        → BeautifulSoup parsing, selector extraction, Job dataclass
+src/parser.py (parse_jobs)        → BeautifulSoup parsing & whitespace normalization
     ↓
-list[Job]
+src/models.py (list[Job])         → Strongly typed, structured Job objects
     ↓
-src/exporter.py                   → Data export formatting (Phase 05)
+src/exporter.py (Phase 05)        → CSV export formatting
 ```
 
 `main.py` coordinates this pipeline end-to-end.
+
+---
+
+## Data Modeling Concepts (Phase 04)
+
+### What is a Data Model?
+A data model defines the logical structure, fields, and types of data within an application. Instead of passing around untyped dictionaries or raw tuples, a data model establishes a formal contract for what attributes an entity contains.
+
+### Why Use a Dataclass?
+Python's built-in `@dataclass` decorator automatically generates boilerplate methods such as `__init__`, `__repr__`, and `__eq__` based on class field annotations. It ensures type clarity, immutability options, and IDE autocompletion without external dependencies.
+
+### What `Job` Represents
+The `Job` dataclass represents a single job posting extracted from the website with normalized fields:
+- `title` (str): Title of the position
+- `company` (str): Hiring organization
+- `location` (str): Location of the role
+- `url` (str): Full absolute link to job details / application
+
+### Why Structured Data is Useful Before CSV Export
+Transforming raw HTML directly into a list of structured `Job` objects decouples parsing logic from output logic. The downstream CSV exporter can iterate over predictable object attributes (`job.title`, `job.company`, etc.) without needing to know anything about HTML structure or CSS selectors.
 
 ---
 
@@ -116,15 +138,6 @@ Inspection of `https://realpython.github.io/fake-jobs/` identified the following
 | **Date Posted** | `<time datetime="YYYY-MM-DD">` | `2021-04-08` |
 | **Job Detail / Apply URL** | Second `<a>` tag inside `<footer class="card-footer">` (`class="card-footer-item"`) | `href="https://realpython.github.io/fake-jobs/jobs/senior-python-developer-0.html"` |
 
-### 4. Useful CSS Selectors & Attributes for Scraping
-- `id="ResultsContainer"`: Locate the main grid of job cards.
-- `div.card` / `div.card-content`: Select all individual job listing blocks.
-- `h2.title`: Extract the job title text.
-- `h3.company`: Extract the company name text.
-- `p.location`: Extract location text.
-- `time`: Extract publication date from text or `datetime` attribute.
-- `footer.card-footer a`: Filter anchors where text is "Apply" or index `[1]` to extract `href`.
-
 ---
 
 ## Getting Started
@@ -152,5 +165,7 @@ python main.py
 
 ### 4. Run Tests
 ```bash
+pytest
+# or
 python -m unittest discover -s tests
 ```

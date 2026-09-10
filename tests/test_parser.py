@@ -1,6 +1,6 @@
 import unittest
-from src.parser import Job, parse_jobs
-
+from src.models import Job
+from src.parser import parse_jobs
 
 SAMPLE_HTML = """
 <div id="ResultsContainer">
@@ -32,6 +32,26 @@ SAMPLE_HTML = """
 </div>
 """
 
+WHITESPACE_HTML = """
+<div class="card">
+    <div class="card-content">
+        <h2 class="title">
+            Senior
+            Python   Developer
+        </h2>
+        <h3 class="company">
+            \t Tech   Corp \n
+        </h3>
+        <p class="location">
+            \n   Remote,   US   \n
+        </p>
+        <footer class="card-footer">
+            <a href="https://example.com/jobs/1">Apply</a>
+        </footer>
+    </div>
+</div>
+"""
+
 RELATIVE_URL_HTML = """
 <div class="card">
     <div class="card-content">
@@ -53,11 +73,22 @@ MISSING_FIELDS_HTML = """
 </div>
 """
 
+MALFORMED_HTML = """
+<html><body><div><<<not valid html>>></div><div class="card"></div></body></html>
+"""
+
 
 class TestParser(unittest.TestCase):
-    def test_parse_multiple_jobs(self):
+    def test_parse_jobs_returns_list_of_job_instances(self):
         jobs = parse_jobs(SAMPLE_HTML)
+        self.assertIsInstance(jobs, list)
         self.assertEqual(len(jobs), 2)
+        for job in jobs:
+            self.assertIsInstance(job, Job)
+            self.assertTrue(hasattr(job, "title"))
+            self.assertTrue(hasattr(job, "company"))
+            self.assertTrue(hasattr(job, "location"))
+            self.assertTrue(hasattr(job, "url"))
 
     def test_job_fields_extraction(self):
         jobs = parse_jobs(SAMPLE_HTML)
@@ -72,6 +103,15 @@ class TestParser(unittest.TestCase):
             ),
         )
 
+    def test_text_normalization(self):
+        jobs = parse_jobs(WHITESPACE_HTML)
+        self.assertEqual(len(jobs), 1)
+        job = jobs[0]
+        self.assertEqual(job.title, "Senior Python Developer")
+        self.assertEqual(job.company, "Tech Corp")
+        self.assertEqual(job.location, "Remote, US")
+        self.assertEqual(job.url, "https://example.com/jobs/1")
+
     def test_relative_url_resolution(self):
         jobs = parse_jobs(
             RELATIVE_URL_HTML,
@@ -85,6 +125,19 @@ class TestParser(unittest.TestCase):
 
     def test_missing_fields_graceful_handling(self):
         jobs = parse_jobs(MISSING_FIELDS_HTML)
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(
+            jobs[0],
+            Job(
+                title="",
+                company="",
+                location="",
+                url="",
+            ),
+        )
+
+    def test_malformed_html_handling(self):
+        jobs = parse_jobs(MALFORMED_HTML)
         self.assertEqual(len(jobs), 1)
         self.assertEqual(
             jobs[0],

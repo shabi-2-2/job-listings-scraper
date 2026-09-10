@@ -1,14 +1,10 @@
-from dataclasses import dataclass
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
+from src.models import Job
 
 
-@dataclass
-class Job:
-    title: str
-    company: str
-    location: str
-    url: str
+def _normalize_text(text: str) -> str:
+    return " ".join(text.split())
 
 
 def parse_jobs(html: str, base_url: str = "") -> list[Job]:
@@ -21,9 +17,9 @@ def parse_jobs(html: str, base_url: str = "") -> list[Job]:
         company_elem = card.find("h3", class_="company")
         location_elem = card.find("p", class_="location")
 
-        title = title_elem.get_text(strip=True) if title_elem else ""
-        company = company_elem.get_text(strip=True) if company_elem else ""
-        location = location_elem.get_text(strip=True) if location_elem else ""
+        title = _normalize_text(title_elem.get_text()) if title_elem else ""
+        company = _normalize_text(company_elem.get_text()) if company_elem else ""
+        location = _normalize_text(location_elem.get_text()) if location_elem else ""
 
         link_elem = next(
             (a for a in card.find_all("a") if a.get_text(strip=True).lower() == "apply"),
