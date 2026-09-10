@@ -1,9 +1,12 @@
 import sys
+from pathlib import Path
 import requests
+from src.exporter import export_jobs
 from src.parser import parse_jobs
 from src.scraper import fetch_page
 
 TARGET_URL = "https://realpython.github.io/fake-jobs/"
+OUTPUT_PATH = Path("data/jobs.csv")
 
 
 def main():
@@ -11,17 +14,13 @@ def main():
         response = fetch_page(TARGET_URL)
         print("Successfully fetched webpage.")
         print(f"Status code: {response.status_code}")
-        print(f"Downloaded: {len(response.text)} characters.")
+        print(f"Downloaded: {len(response.text)} characters.\n")
 
         jobs = parse_jobs(response.text, base_url=TARGET_URL)
-        print(f"\nFound {len(jobs)} job listings.\n")
+        print(f"Found {len(jobs)} job listings.\n")
 
-        print("First few jobs:\n")
-        for idx, job in enumerate(jobs[:5], 1):
-            print(f"{idx}. {job.title}")
-            print(f"   Company: {job.company}")
-            print(f"   Location: {job.location}")
-            print(f"   URL: {job.url}\n")
+        export_jobs(jobs, OUTPUT_PATH)
+        print(f"Exported {len(jobs)} jobs to {OUTPUT_PATH}")
     except requests.exceptions.RequestException as err:
         print(f"Error fetching webpage: {err}", file=sys.stderr)
         sys.exit(1)

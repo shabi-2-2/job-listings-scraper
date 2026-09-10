@@ -12,20 +12,21 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **HTTP Client**: `requests` (Phase 02)
 - **HTML Parsing**: `beautifulsoup4` (Phase 03)
 - **Data Modeling**: Standard library `dataclasses` (Phase 04)
-- **Data Export & CLI**: Built-in `csv` module, standard library / `argparse`
+- **Data Export & CLI**: Built-in `csv` module (Phase 05), standard library / `argparse`
 
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
 - **Phase 02 — Fetch Webpage**: COMPLETE
 - **Phase 03 — Parse HTML & Job Extraction**: COMPLETE
 - **Phase 04 — Job Data Model & Clean Data Flow**: COMPLETE
+- **Phase 05 — CSV Export**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
 - [x] **Phase 02 — Fetch Webpage** (COMPLETE)
 - [x] **Phase 03 — Parse HTML** (COMPLETE)
 - [x] **Phase 04 — Job Data Model** (COMPLETE)
-- [ ] **Phase 05 — CSV Export**
+- [x] **Phase 05 — CSV Export** (COMPLETE)
 - [ ] **Phase 06 — Refactoring & Error Handling**
 - [ ] **Phase 07 — CLI**
 - [ ] **Phase 08 — Data Analysis**
@@ -38,7 +39,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-TARGET_URL
+Website (https://realpython.github.io/fake-jobs/)
     ↓
 src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
     ↓
@@ -48,10 +49,37 @@ src/parser.py (parse_jobs)        → BeautifulSoup parsing & whitespace normali
     ↓
 src/models.py (list[Job])         → Strongly typed, structured Job objects
     ↓
-src/exporter.py (Phase 05)        → CSV export formatting
+src/exporter.py (export_jobs)     → CSV formatting & file export
+    ↓
+data/jobs.csv                     → Final persisted tabular dataset
 ```
 
 `main.py` coordinates this pipeline end-to-end.
+
+---
+
+## CSV Export Concepts (Phase 05)
+
+### What is CSV?
+CSV (Comma-Separated Values) is a plain-text file format for storing tabular data. Each line in a CSV file corresponds to a data record/row, and each record contains one or more fields separated by commas.
+
+### Why CSV is Useful for Scraped Data
+- **Portability**: Plain-text format compatible with spreadsheet software (Excel, Google Sheets) and data tools (Pandas, SQL databases).
+- **Simplicity**: Does not require external server software, binary codecs, or relational database setup.
+- **Human-Readable**: Easy to inspect, verify, and version control.
+
+### How Python's `csv` Module Works
+Python's standard library `csv` module provides `csv.writer` and `csv.DictWriter` to serialize collections of objects into RFC 4180-compliant CSV lines. It automatically handles:
+- Quoting strings that contain commas, quotes, or newlines.
+- Consistent UTF-8 encoding and newline handling across operating systems (`newline=""`).
+
+### Role of `exporter.py`
+`src/exporter.py` exposes `export_jobs(jobs, output_path)`:
+1. Ensures the target destination directory exists (`mkdir(parents=True, exist_ok=True)`).
+2. Opens the destination file safely with `utf-8` encoding.
+3. Writes the header row (`title,company,location,url`).
+4. Iterates over `Job` instances and writes row values mapped from object fields.
+5. Handles empty job lists gracefully by producing a valid CSV containing only the headers.
 
 ---
 
@@ -69,9 +97,6 @@ The `Job` dataclass represents a single job posting extracted from the website w
 - `company` (str): Hiring organization
 - `location` (str): Location of the role
 - `url` (str): Full absolute link to job details / application
-
-### Why Structured Data is Useful Before CSV Export
-Transforming raw HTML directly into a list of structured `Job` objects decouples parsing logic from output logic. The downstream CSV exporter can iterate over predictable object attributes (`job.title`, `job.company`, etc.) without needing to know anything about HTML structure or CSS selectors.
 
 ---
 
@@ -93,9 +118,6 @@ An HTTP status code is a three-digit integer returned by the server indicating t
 - **4xx (Client Error)**: e.g., `404 Not Found` — The requested page does not exist.
 - **5xx (Server Error)**: e.g., `500 Internal Server Error` — The server encountered an issue while processing the request.
 
-### Why Are Request Timeouts Important?
-Without a timeout specified, network requests can hang indefinitely if the server is unreachable or fails to respond, causing the scraper to freeze. Setting a reasonable timeout (e.g., 10 seconds) guarantees that the program fails cleanly and predictably when connection problems arise.
-
 ---
 
 ## HTML Parsing & Extraction Concepts (Phase 03)
@@ -108,13 +130,6 @@ HTML parsing is the process of taking a raw string of HTML text and converting i
 
 ### What is a CSS Selector?
 A CSS selector is a pattern used to select elements within an HTML document based on tag names (`h2`), classes (`.title`), IDs (`#ResultsContainer`), or attributes (`[href]`).
-
-### Identification & Extraction Strategy
-1. **Job Cards**: Located using `soup.find_all("div", class_="card")`.
-2. **Job Title**: Extracted from `<h2 class="title ...">` within each card.
-3. **Company Name**: Extracted from `<h3 class="subtitle ... company">` within each card.
-4. **Location**: Extracted from `<p class="location">` within each card.
-5. **Job URL**: Extracted from the `href` attribute of the `<a class="card-footer-item">` matching "Apply", resolved against the base URL with `urllib.parse.urljoin`.
 
 ---
 
