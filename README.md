@@ -12,8 +12,9 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **HTTP Client**: `requests` (Phase 02)
 - **HTML Parsing**: `beautifulsoup4` (Phase 03)
 - **Data Modeling**: Standard library `dataclasses` (Phase 04)
-- **Data Export & CLI**: Built-in `csv` module (Phase 05), standard library / `argparse`
+- **Data Export**: Built-in `csv` module (Phase 05)
 - **Logging & Error Handling**: Standard library `logging` (Phase 06)
+- **Command-Line Interface**: Standard library `argparse` (Phase 07)
 
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
@@ -22,6 +23,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Phase 04 — Job Data Model & Clean Data Flow**: COMPLETE
 - **Phase 05 — CSV Export**: COMPLETE
 - **Phase 06 — Refactoring & Error Handling**: COMPLETE
+- **Phase 07 — Command-Line Interface (CLI)**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -30,9 +32,38 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - [x] **Phase 04 — Job Data Model** (COMPLETE)
 - [x] **Phase 05 — CSV Export** (COMPLETE)
 - [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
-- [ ] **Phase 07 — CLI**
+- [x] **Phase 07 — CLI** (COMPLETE)
 - [ ] **Phase 08 — Data Analysis**
 - [ ] **Phase 09 — Advanced Features**
+
+---
+
+## Command-Line Interface (CLI) Usage (Phase 07)
+
+Command-line arguments allow users and automated workflows to configure the scraper dynamically at runtime without modifying source files.
+
+### 1. Default Run
+Scrapes the default target URL and writes to `data/jobs.csv`:
+```bash
+python main.py
+```
+
+### 2. Custom Output File
+Exports scraped jobs to a custom destination path:
+```bash
+python main.py --output data/python_jobs.csv
+```
+
+### 3. Custom Target URL and Output
+Overrides both target URL and export destination:
+```bash
+python main.py --url https://realpython.github.io/fake-jobs/ --output data/jobs.csv
+```
+
+### 4. Display Help & Options
+```bash
+python main.py --help
+```
 
 ---
 
@@ -41,7 +72,9 @@ A Python-based web scraping application designed to extract, parse, model, and e
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-Website (https://realpython.github.io/fake-jobs/)
+Command-Line Arguments (argparse)
+    ↓
+Target URL & Output Path
     ↓
 src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
     ↓
@@ -53,10 +86,10 @@ src/models.py (list[Job])         → Strongly typed, structured Job objects
     ↓
 src/exporter.py (export_jobs)     → CSV formatting & file export
     ↓
-data/jobs.csv                     → Final persisted tabular dataset
+Destination CSV File (e.g. data/jobs.csv)
 ```
 
-`main.py` coordinates this pipeline end-to-end with centralized logging and safe exception handling.
+`main.py` coordinates this pipeline end-to-end with centralized logging, argument validation, and safe exception handling.
 
 ---
 
