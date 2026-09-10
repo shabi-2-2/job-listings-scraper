@@ -16,17 +16,40 @@ A Python-based web scraping application designed to extract, parse, model, and e
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
 - **Phase 02 — Fetch Webpage**: COMPLETE
+- **Phase 03 — Parse HTML & Job Extraction**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
 - [x] **Phase 02 — Fetch Webpage** (COMPLETE)
-- [ ] **Phase 03 — Parse HTML**
+- [x] **Phase 03 — Parse HTML** (COMPLETE)
 - [ ] **Phase 04 — Job Data Model**
 - [ ] **Phase 05 — CSV Export**
 - [ ] **Phase 06 — Refactoring & Error Handling**
 - [ ] **Phase 07 — CLI**
 - [ ] **Phase 08 — Data Analysis**
 - [ ] **Phase 09 — Advanced Features**
+
+---
+
+## Scraper Architecture
+
+The scraper follows a modular separation of concerns:
+
+```
+TARGET_URL
+    ↓
+src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
+    ↓
+HTML Text
+    ↓
+src/parser.py (parse_jobs)        → BeautifulSoup parsing, selector extraction, Job dataclass
+    ↓
+list[Job]
+    ↓
+src/exporter.py                   → Data export formatting (Phase 05)
+```
+
+`main.py` coordinates this pipeline end-to-end.
 
 ---
 
@@ -50,6 +73,26 @@ An HTTP status code is a three-digit integer returned by the server indicating t
 
 ### Why Are Request Timeouts Important?
 Without a timeout specified, network requests can hang indefinitely if the server is unreachable or fails to respond, causing the scraper to freeze. Setting a reasonable timeout (e.g., 10 seconds) guarantees that the program fails cleanly and predictably when connection problems arise.
+
+---
+
+## HTML Parsing & Extraction Concepts (Phase 03)
+
+### What is HTML Parsing?
+HTML parsing is the process of taking a raw string of HTML text and converting it into a structured, navigable hierarchical tree structure (Document Object Model) in memory so individual elements, text nodes, and attributes can be queried and extracted programmatically.
+
+### What is BeautifulSoup?
+`BeautifulSoup` (`bs4`) is a Python parsing library that traverses and searches HTML and XML documents. It abstracts parser implementations (such as Python's standard `html.parser`) and provides intuitive methods (`find`, `find_all`, `select`) for navigating document trees.
+
+### What is a CSS Selector?
+A CSS selector is a pattern used to select elements within an HTML document based on tag names (`h2`), classes (`.title`), IDs (`#ResultsContainer`), or attributes (`[href]`).
+
+### Identification & Extraction Strategy
+1. **Job Cards**: Located using `soup.find_all("div", class_="card")`.
+2. **Job Title**: Extracted from `<h2 class="title ...">` within each card.
+3. **Company Name**: Extracted from `<h3 class="subtitle ... company">` within each card.
+4. **Location**: Extracted from `<p class="location">` within each card.
+5. **Job URL**: Extracted from the `href` attribute of the `<a class="card-footer-item">` matching "Apply", resolved against the base URL with `urllib.parse.urljoin`.
 
 ---
 
