@@ -1,11 +1,11 @@
 import requests
 
 
-def fetch_page(url: str, timeout: float = 10.0) -> str:
+def fetch_page(url: str, timeout: float = 10.0) -> requests.Response:
     try:
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
-        return response.text
+        return response
     except requests.exceptions.Timeout as err:
         raise requests.exceptions.Timeout(f"Request timed out while connecting to {url}") from err
     except requests.exceptions.ConnectionError as err:

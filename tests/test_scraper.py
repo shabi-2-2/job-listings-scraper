@@ -17,7 +17,9 @@ class TestScraper(unittest.TestCase):
         result = fetch_page(url)
 
         mock_get.assert_called_once_with(url, timeout=10.0)
-        self.assertEqual(result, "<html><body><h1>Fake Jobs</h1></body></html>")
+        self.assertEqual(result, mock_response)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.text, "<html><body><h1>Fake Jobs</h1></body></html>")
 
     @patch("src.scraper.requests.get")
     def test_fetch_page_timeout(self, mock_get):

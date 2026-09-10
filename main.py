@@ -7,10 +7,10 @@ TARGET_URL = "https://realpython.github.io/fake-jobs/"
 
 def main():
     try:
-        html = fetch_page(TARGET_URL)
+        response = fetch_page(TARGET_URL)
         print("Successfully fetched webpage.")
-        print("Status code: 200")
-        print(f"Downloaded: {len(html)} characters.")
+        print(f"Status code: {response.status_code}")
+        print(f"Downloaded: {len(response.text)} characters.")
     except requests.exceptions.RequestException as err:
         print(f"Error fetching webpage: {err}", file=sys.stderr)
         sys.exit(1)
