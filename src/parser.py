@@ -1,6 +1,9 @@
+import logging
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from src.models import Job
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_text(text: str) -> str:
@@ -8,8 +11,17 @@ def _normalize_text(text: str) -> str:
 
 
 def parse_jobs(html: str, base_url: str = "") -> list[Job]:
+    if not html or not html.strip():
+        logger.warning("Empty HTML content provided for parsing.")
+        return []
+
     soup = BeautifulSoup(html, "html.parser")
     cards = soup.find_all("div", class_="card")
+
+    if not cards:
+        logger.warning("No job cards found with class 'card' in the HTML.")
+        return []
+
     jobs: list[Job] = []
 
     for card in cards:
@@ -41,4 +53,5 @@ def parse_jobs(html: str, base_url: str = "") -> list[Job]:
             )
         )
 
+    logger.info("Successfully parsed %d job listings.", len(jobs))
     return jobs

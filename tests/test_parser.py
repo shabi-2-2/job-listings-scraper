@@ -73,6 +73,10 @@ MISSING_FIELDS_HTML = """
 </div>
 """
 
+NO_CARDS_HTML = """
+<html><body><div id="container"><h1>Job Board</h1><p>No listings</p></div></body></html>
+"""
+
 MALFORMED_HTML = """
 <html><body><div><<<not valid html>>></div><div class="card"></div></body></html>
 """
@@ -135,6 +139,10 @@ class TestParser(unittest.TestCase):
                 url="",
             ),
         )
+
+    def test_no_job_cards_returns_empty_list(self):
+        jobs = parse_jobs(NO_CARDS_HTML)
+        self.assertEqual(jobs, [])
 
     def test_malformed_html_handling(self):
         jobs = parse_jobs(MALFORMED_HTML)

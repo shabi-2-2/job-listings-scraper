@@ -13,6 +13,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **HTML Parsing**: `beautifulsoup4` (Phase 03)
 - **Data Modeling**: Standard library `dataclasses` (Phase 04)
 - **Data Export & CLI**: Built-in `csv` module (Phase 05), standard library / `argparse`
+- **Logging & Error Handling**: Standard library `logging` (Phase 06)
 
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
@@ -20,6 +21,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Phase 03 — Parse HTML & Job Extraction**: COMPLETE
 - **Phase 04 — Job Data Model & Clean Data Flow**: COMPLETE
 - **Phase 05 — CSV Export**: COMPLETE
+- **Phase 06 — Refactoring & Error Handling**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -27,7 +29,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - [x] **Phase 03 — Parse HTML** (COMPLETE)
 - [x] **Phase 04 — Job Data Model** (COMPLETE)
 - [x] **Phase 05 — CSV Export** (COMPLETE)
-- [ ] **Phase 06 — Refactoring & Error Handling**
+- [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
 - [ ] **Phase 07 — CLI**
 - [ ] **Phase 08 — Data Analysis**
 - [ ] **Phase 09 — Advanced Features**
@@ -54,7 +56,25 @@ src/exporter.py (export_jobs)     → CSV formatting & file export
 data/jobs.csv                     → Final persisted tabular dataset
 ```
 
-`main.py` coordinates this pipeline end-to-end.
+`main.py` coordinates this pipeline end-to-end with centralized logging and safe exception handling.
+
+---
+
+## Refactoring & Error Handling Concepts (Phase 06)
+
+### Logging Strategy
+The application uses Python's standard `logging` library with structured module-level loggers (`logging.getLogger(__name__)`). Operations are categorized with appropriate severity levels:
+- **DEBUG**: Fine-grained diagnostic information (e.g., HTML character length).
+- **INFO**: Milestones in execution (fetching URLs, parse counts, export completion).
+- **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards).
+- **ERROR**: Actionable failures (network timeouts, connection loss, file system permission errors).
+
+### Layer-Appropriate Error Handling
+Errors are captured and reported close to where they occur:
+1. **Scraper (`scraper.py`)**: Intercepts `Timeout`, `ConnectionError`, and `HTTPError`, logging clear diagnostic information and raising informative exceptions without returning fake responses.
+2. **Parser (`parser.py`)**: Handles malformed HTML, missing nodes, and empty inputs gracefully without throwing uncaught exceptions, logging warnings and returning an empty list when no listings are found.
+3. **Exporter (`exporter.py`)**: Catches `OSError` / file write issues, logs path-specific errors, and ensures directory trees are created cleanly.
+4. **Orchestrator (`main.py`)**: Catches expected layer exceptions, presents user-friendly terminal output instead of raw stack traces, and terminates with a non-zero exit code (`sys.exit(1)`).
 
 ---
 
@@ -69,17 +89,7 @@ CSV (Comma-Separated Values) is a plain-text file format for storing tabular dat
 - **Human-Readable**: Easy to inspect, verify, and version control.
 
 ### How Python's `csv` Module Works
-Python's standard library `csv` module provides `csv.writer` and `csv.DictWriter` to serialize collections of objects into RFC 4180-compliant CSV lines. It automatically handles:
-- Quoting strings that contain commas, quotes, or newlines.
-- Consistent UTF-8 encoding and newline handling across operating systems (`newline=""`).
-
-### Role of `exporter.py`
-`src/exporter.py` exposes `export_jobs(jobs, output_path)`:
-1. Ensures the target destination directory exists (`mkdir(parents=True, exist_ok=True)`).
-2. Opens the destination file safely with `utf-8` encoding.
-3. Writes the header row (`title,company,location,url`).
-4. Iterates over `Job` instances and writes row values mapped from object fields.
-5. Handles empty job lists gracefully by producing a valid CSV containing only the headers.
+Python's standard library `csv` module provides `csv.writer` and `csv.DictWriter` to serialize collections of objects into RFC 4180-compliant CSV lines. It automatically handles quoting strings that contain commas, quotes, or newlines, with consistent UTF-8 encoding.
 
 ---
 
@@ -89,7 +99,7 @@ Python's standard library `csv` module provides `csv.writer` and `csv.DictWriter
 A data model defines the logical structure, fields, and types of data within an application. Instead of passing around untyped dictionaries or raw tuples, a data model establishes a formal contract for what attributes an entity contains.
 
 ### Why Use a Dataclass?
-Python's built-in `@dataclass` decorator automatically generates boilerplate methods such as `__init__`, `__repr__`, and `__eq__` based on class field annotations. It ensures type clarity, immutability options, and IDE autocompletion without external dependencies.
+Python's built-in `@dataclass` decorator automatically generates boilerplate methods such as `__init__`, `__repr__`, and `__eq__` based on class field annotations. It ensures type clarity and IDE autocompletion without external dependencies.
 
 ### What `Job` Represents
 The `Job` dataclass represents a single job posting extracted from the website with normalized fields:
@@ -103,33 +113,26 @@ The `Job` dataclass represents a single job posting extracted from the website w
 ## Web & HTTP Concepts (Phase 02)
 
 ### What is HTTP?
-HTTP (Hypertext Transfer Protocol) is the foundational protocol used for transmitting data across the World Wide Web. It operates on a client-server model where a client (e.g., a web browser or Python script) sends a request to a server, and the server returns a response containing data such as HTML, JSON, or media files.
+HTTP (Hypertext Transfer Protocol) is the foundational protocol used for transmitting data across the World Wide Web. It operates on a client-server model where a client sends a request to a server, and the server returns a response containing data such as HTML.
 
 ### What is an HTTP GET Request?
-An HTTP GET request is a method used to retrieve or "get" data from a specified resource on a web server. It does not modify server state and simply asks the server to send back the document located at the given URL.
+An HTTP GET request is a method used to retrieve data from a specified resource on a web server without modifying server state.
 
 ### What is the `requests` Library?
-`requests` is an HTTP library for Python designed to make sending HTTP/1.1 requests simple and human-friendly. It handles connection pooling, URL encoding, session management, SSL verification, and decoding response content automatically.
+`requests` is an HTTP library for Python designed to make sending HTTP/1.1 requests simple and human-friendly.
 
 ### What is an HTTP Status Code?
-An HTTP status code is a three-digit integer returned by the server indicating the outcome of the request:
-- **2xx (Success)**: e.g., `200 OK` — The request succeeded and data was returned.
-- **3xx (Redirection)**: e.g., `301 Moved Permanently` — The resource is located elsewhere.
-- **4xx (Client Error)**: e.g., `404 Not Found` — The requested page does not exist.
-- **5xx (Server Error)**: e.g., `500 Internal Server Error` — The server encountered an issue while processing the request.
+An HTTP status code is a three-digit integer returned by the server indicating the outcome of the request (`200 OK`, `404 Not Found`, `500 Internal Server Error`).
 
 ---
 
 ## HTML Parsing & Extraction Concepts (Phase 03)
 
 ### What is HTML Parsing?
-HTML parsing is the process of taking a raw string of HTML text and converting it into a structured, navigable hierarchical tree structure (Document Object Model) in memory so individual elements, text nodes, and attributes can be queried and extracted programmatically.
+HTML parsing is the process of taking a raw string of HTML text and converting it into a structured, navigable hierarchical tree structure (Document Object Model) in memory.
 
 ### What is BeautifulSoup?
-`BeautifulSoup` (`bs4`) is a Python parsing library that traverses and searches HTML and XML documents. It abstracts parser implementations (such as Python's standard `html.parser`) and provides intuitive methods (`find`, `find_all`, `select`) for navigating document trees.
-
-### What is a CSS Selector?
-A CSS selector is a pattern used to select elements within an HTML document based on tag names (`h2`), classes (`.title`), IDs (`#ResultsContainer`), or attributes (`[href]`).
+`BeautifulSoup` (`bs4`) is a Python parsing library that traverses and searches HTML and XML documents using methods like `find` and `find_all`.
 
 ---
 

@@ -85,3 +85,9 @@ def test_export_escapes_special_characters(tmp_path: Path):
             "Stewartbury, AA",
             "https://example.com/job/special?a=1&b=2",
         ]
+
+
+def test_export_raises_os_error_on_invalid_path(tmp_path: Path):
+    invalid_path = tmp_path
+    with pytest.raises(OSError):
+        export_jobs([], invalid_path)
