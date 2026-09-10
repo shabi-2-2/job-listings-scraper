@@ -1,7 +1,7 @@
 # Job Listings Scraper
 
 ## Objective
-A Python-based web scraping application designed to extract, parse, model, and export job listing data from the Fake Jobs practice website.
+A Python-based web scraping application designed to extract, parse, model, export, and analyze job listing data from the Fake Jobs practice website.
 
 ## Target Website
 - **URL**: https://realpython.github.io/fake-jobs/
@@ -15,6 +15,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Data Export**: Built-in `csv` module (Phase 05)
 - **Logging & Error Handling**: Standard library `logging` (Phase 06)
 - **Command-Line Interface**: Standard library `argparse` (Phase 07)
+- **Data Analysis & Visualization**: `pandas`, `matplotlib` (Phase 08)
 
 ## Current Development Phase
 - **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
@@ -24,6 +25,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Phase 05 — CSV Export**: COMPLETE
 - **Phase 06 — Refactoring & Error Handling**: COMPLETE
 - **Phase 07 — Command-Line Interface (CLI)**: COMPLETE
+- **Phase 08 — Data Analysis & Visualization**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -33,16 +35,16 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - [x] **Phase 05 — CSV Export** (COMPLETE)
 - [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
 - [x] **Phase 07 — CLI** (COMPLETE)
-- [ ] **Phase 08 — Data Analysis**
+- [x] **Phase 08 — Data Analysis** (COMPLETE)
 - [ ] **Phase 09 — Advanced Features**
 
 ---
 
-## Command-Line Interface (CLI) Usage (Phase 07)
+## Command-Line Interface (CLI) Usage (Phase 07 & 08)
 
-Command-line arguments allow users and automated workflows to configure the scraper dynamically at runtime without modifying source files.
+Command-line arguments allow users and automated workflows to configure the scraper and data analysis dynamically at runtime.
 
-### 1. Default Run
+### 1. Default Run (Scrape & Export)
 Scrapes the default target URL and writes to `data/jobs.csv`:
 ```bash
 python main.py
@@ -60,7 +62,18 @@ Overrides both target URL and export destination:
 python main.py --url https://realpython.github.io/fake-jobs/ --output data/jobs.csv
 ```
 
-### 4. Display Help & Options
+### 4. Data Analysis Mode
+Analyzes the existing `data/jobs.csv` dataset and generates charts in `data/plots/`:
+```bash
+python main.py --analyze
+```
+
+### 5. Analyze Custom CSV File
+```bash
+python main.py --analyze --output data/custom_jobs.csv
+```
+
+### 6. Display Help & Options
 ```bash
 python main.py --help
 ```
@@ -72,9 +85,7 @@ python main.py --help
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-Command-Line Arguments (argparse)
-    ↓
-Target URL & Output Path
+Website (https://realpython.github.io/fake-jobs/)
     ↓
 src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
     ↓
@@ -86,10 +97,38 @@ src/models.py (list[Job])         → Strongly typed, structured Job objects
     ↓
 src/exporter.py (export_jobs)     → CSV formatting & file export
     ↓
-Destination CSV File (e.g. data/jobs.csv)
+data/jobs.csv                     → Persisted tabular dataset
+    ↓
+src/analyzer.py (run_analysis)    → Pandas aggregation & Matplotlib visualizations
+    ↓
+data/plots/ (*.png)               → Exported chart figures
 ```
 
 `main.py` coordinates this pipeline end-to-end with centralized logging, argument validation, and safe exception handling.
+
+---
+
+## Data Analysis & Visualization (Phase 08)
+
+### Why Pandas is Useful
+`pandas` provides high-performance data structures and analytical functions optimized for tabular data. It simplifies aggregation, filtering, missing value handling, and frequency analysis without manual iteration.
+
+### What is a DataFrame?
+A `DataFrame` is a two-dimensional, size-mutable, tabular data structure with labeled axes (rows and columns). In our pipeline, the CSV is loaded directly into a DataFrame where each row corresponds to a job listing.
+
+### Generated Statistics
+1. **Total Jobs**: Total volume of job postings analyzed.
+2. **Unique Companies**: Number of distinct hiring companies.
+3. **Unique Locations**: Number of distinct job locations.
+4. **Top Companies**: Companies offering the highest number of listings.
+5. **Top Locations**: Geographic locations with the highest concentration of openings.
+6. **Top Job Titles**: Most frequently posted job titles.
+
+### Generated Visualizations
+Visualizations are automatically saved to `data/plots/`:
+- `data/plots/top_locations.png`: Bar chart of the top job locations.
+- `data/plots/top_companies.png`: Bar chart of the top hiring companies.
+- `data/plots/top_titles.png`: Bar chart of the most common job titles.
 
 ---
 
@@ -97,17 +136,18 @@ Destination CSV File (e.g. data/jobs.csv)
 
 ### Logging Strategy
 The application uses Python's standard `logging` library with structured module-level loggers (`logging.getLogger(__name__)`). Operations are categorized with appropriate severity levels:
-- **DEBUG**: Fine-grained diagnostic information (e.g., HTML character length).
+- **DEBUG**: Fine-grained diagnostic information.
 - **INFO**: Milestones in execution (fetching URLs, parse counts, export completion).
 - **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards).
 - **ERROR**: Actionable failures (network timeouts, connection loss, file system permission errors).
 
 ### Layer-Appropriate Error Handling
 Errors are captured and reported close to where they occur:
-1. **Scraper (`scraper.py`)**: Intercepts `Timeout`, `ConnectionError`, and `HTTPError`, logging clear diagnostic information and raising informative exceptions without returning fake responses.
-2. **Parser (`parser.py`)**: Handles malformed HTML, missing nodes, and empty inputs gracefully without throwing uncaught exceptions, logging warnings and returning an empty list when no listings are found.
-3. **Exporter (`exporter.py`)**: Catches `OSError` / file write issues, logs path-specific errors, and ensures directory trees are created cleanly.
-4. **Orchestrator (`main.py`)**: Catches expected layer exceptions, presents user-friendly terminal output instead of raw stack traces, and terminates with a non-zero exit code (`sys.exit(1)`).
+1. **Scraper (`scraper.py`)**: Intercepts `Timeout`, `ConnectionError`, and `HTTPError`.
+2. **Parser (`parser.py`)**: Handles malformed HTML, missing nodes, and empty inputs gracefully.
+3. **Exporter (`exporter.py`)**: Catches `OSError` / file write issues.
+4. **Analyzer (`analyzer.py`)**: Validates CSV existence, content, and required columns.
+5. **Orchestrator (`main.py`)**: Catches expected layer exceptions and exits cleanly with code `1`.
 
 ---
 
@@ -121,18 +161,15 @@ CSV (Comma-Separated Values) is a plain-text file format for storing tabular dat
 - **Simplicity**: Does not require external server software, binary codecs, or relational database setup.
 - **Human-Readable**: Easy to inspect, verify, and version control.
 
-### How Python's `csv` Module Works
-Python's standard library `csv` module provides `csv.writer` and `csv.DictWriter` to serialize collections of objects into RFC 4180-compliant CSV lines. It automatically handles quoting strings that contain commas, quotes, or newlines, with consistent UTF-8 encoding.
-
 ---
 
 ## Data Modeling Concepts (Phase 04)
 
 ### What is a Data Model?
-A data model defines the logical structure, fields, and types of data within an application. Instead of passing around untyped dictionaries or raw tuples, a data model establishes a formal contract for what attributes an entity contains.
+A data model defines the logical structure, fields, and types of data within an application.
 
 ### Why Use a Dataclass?
-Python's built-in `@dataclass` decorator automatically generates boilerplate methods such as `__init__`, `__repr__`, and `__eq__` based on class field annotations. It ensures type clarity and IDE autocompletion without external dependencies.
+Python's built-in `@dataclass` decorator automatically generates boilerplate methods such as `__init__`, `__repr__`, and `__eq__` based on class field annotations.
 
 ### What `Job` Represents
 The `Job` dataclass represents a single job posting extracted from the website with normalized fields:
@@ -146,16 +183,13 @@ The `Job` dataclass represents a single job posting extracted from the website w
 ## Web & HTTP Concepts (Phase 02)
 
 ### What is HTTP?
-HTTP (Hypertext Transfer Protocol) is the foundational protocol used for transmitting data across the World Wide Web. It operates on a client-server model where a client sends a request to a server, and the server returns a response containing data such as HTML.
+HTTP (Hypertext Transfer Protocol) is the foundational protocol used for transmitting data across the World Wide Web.
 
 ### What is an HTTP GET Request?
 An HTTP GET request is a method used to retrieve data from a specified resource on a web server without modifying server state.
 
 ### What is the `requests` Library?
 `requests` is an HTTP library for Python designed to make sending HTTP/1.1 requests simple and human-friendly.
-
-### What is an HTTP Status Code?
-An HTTP status code is a three-digit integer returned by the server indicating the outcome of the request (`200 OK`, `404 Not Found`, `500 Internal Server Error`).
 
 ---
 
@@ -209,12 +243,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Run Entry Point
+### 3. Run Entry Point (Scrape & Export)
 ```bash
 python main.py
 ```
 
-### 4. Run Tests
+### 4. Run Analysis Mode
+```bash
+python main.py --analyze
+```
+
+### 5. Run Tests
 ```bash
 pytest
 # or

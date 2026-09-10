@@ -9,6 +9,7 @@ def test_parse_args_defaults():
     args = parse_args([])
     assert args.url == DEFAULT_URL
     assert args.output == DEFAULT_OUTPUT
+    assert args.analyze is False
 
 
 def test_parse_args_custom_url():
@@ -21,6 +22,11 @@ def test_parse_args_custom_output():
     args = parse_args(["--output", "custom_data/out.csv"])
     assert args.url == DEFAULT_URL
     assert args.output == Path("custom_data/out.csv")
+
+
+def test_parse_args_analyze_flag():
+    args = parse_args(["--analyze"])
+    assert args.analyze is True
 
 
 def test_parse_args_custom_url_and_output():
@@ -46,6 +52,7 @@ def test_parse_args_help(capsys):
     captured = capsys.readouterr()
     assert "--url" in captured.out
     assert "--output" in captured.out
+    assert "--analyze" in captured.out
 
 
 @patch("main.fetch_page")
@@ -69,3 +76,9 @@ def test_main_execution_flow(mock_export, mock_parse, mock_fetch, capsys):
     captured = capsys.readouterr()
     assert "Starting job scraper..." in captured.out
     assert "Completed successfully." in captured.out
+
+
+@patch("main.run_analysis")
+def test_main_analyze_flow(mock_analysis):
+    main(["--analyze", "--output", "data/custom.csv"])
+    mock_analysis.assert_called_once_with(csv_path=Path("data/custom.csv"))
