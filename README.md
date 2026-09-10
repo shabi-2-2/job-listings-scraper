@@ -5,7 +5,7 @@ A Python-based web scraping application designed to extract, parse, model, and e
 
 ## Target Website
 - **URL**: https://realpython.github.io/fake-jobs/
-- **Description**: A mock job board provided by Real Python for learning web scraping techniques.
+- **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
 
 ## Planned Technology Stack
 - **Language**: Python 3.10+
@@ -14,11 +14,12 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - **Data Export & CLI**: Built-in `csv` module, standard library / `argparse`
 
 ## Current Development Phase
-- **Active Phase**: `Phase 01 — Project Setup & Web Fundamentals`
+- **Phase 01 — Project Setup & Web Fundamentals**: COMPLETE
+- **Phase 02 — Fetch Webpage**: COMPLETE
 
 ## Project Roadmap
-- [x] **Phase 01 — Project Setup & Web Fundamentals** (Current)
-- [ ] **Phase 02 — Fetch Webpage**
+- [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
+- [x] **Phase 02 — Fetch Webpage** (COMPLETE)
 - [ ] **Phase 03 — Parse HTML**
 - [ ] **Phase 04 — Job Data Model**
 - [ ] **Phase 05 — CSV Export**
@@ -26,6 +27,29 @@ A Python-based web scraping application designed to extract, parse, model, and e
 - [ ] **Phase 07 — CLI**
 - [ ] **Phase 08 — Data Analysis**
 - [ ] **Phase 09 — Advanced Features**
+
+---
+
+## Web & HTTP Concepts (Phase 02)
+
+### What is HTTP?
+HTTP (Hypertext Transfer Protocol) is the foundational protocol used for transmitting data across the World Wide Web. It operates on a client-server model where a client (e.g., a web browser or Python script) sends a request to a server, and the server returns a response containing data such as HTML, JSON, or media files.
+
+### What is an HTTP GET Request?
+An HTTP GET request is a method used to retrieve or "get" data from a specified resource on a web server. It does not modify server state and simply asks the server to send back the document located at the given URL.
+
+### What is the `requests` Library?
+`requests` is an HTTP library for Python designed to make sending HTTP/1.1 requests simple and human-friendly. It handles connection pooling, URL encoding, session management, SSL verification, and decoding response content automatically.
+
+### What is an HTTP Status Code?
+An HTTP status code is a three-digit integer returned by the server indicating the outcome of the request:
+- **2xx (Success)**: e.g., `200 OK` — The request succeeded and data was returned.
+- **3xx (Redirection)**: e.g., `301 Moved Permanently` — The resource is located elsewhere.
+- **4xx (Client Error)**: e.g., `404 Not Found` — The requested page does not exist.
+- **5xx (Server Error)**: e.g., `500 Internal Server Error` — The server encountered an issue while processing the request.
+
+### Why Are Request Timeouts Important?
+Without a timeout specified, network requests can hang indefinitely if the server is unreachable or fails to respond, causing the scraper to freeze. Setting a reasonable timeout (e.g., 10 seconds) guarantees that the program fails cleanly and predictably when connection problems arise.
 
 ---
 
@@ -63,7 +87,7 @@ Inspection of `https://realpython.github.io/fake-jobs/` identified the following
 ## Getting Started
 
 ### 1. Virtual Environment Setup
-Activate the pre-configured `.venv` environment:
+Activate the `.venv` environment:
 
 ```bash
 # On macOS/Linux
@@ -73,9 +97,17 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-### 2. Verification
-Run the entry point script to verify the environment:
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
+### 3. Run Entry Point
 ```bash
 python main.py
+```
+
+### 4. Run Tests
+```bash
+python -m unittest discover -s tests
 ```
