@@ -15,6 +15,7 @@ from src.analyzer import (
     get_unique_locations,
     load_jobs,
 )
+from src.dedup import deduplicate_jobs
 from src.exporter import export_jobs
 from src.filter import filter_jobs
 from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
@@ -113,6 +114,8 @@ def run_scraper(
         return
 
     print(f"Found {len(jobs)} job listings.\n")
+
+    jobs = deduplicate_jobs(jobs)
 
     jobs = filter_jobs(jobs, keyword=keyword, location=location, company=company)
 

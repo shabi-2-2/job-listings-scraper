@@ -28,6 +28,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 08 — Data Analysis & Visualization**: COMPLETE
 - **Phase 09.1 — Pagination / Multi-Page Scraping**: COMPLETE
 - **Phase 09.2 — Job Filtering**: COMPLETE
+- **Phase 09.3 — Job Deduplication**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -41,6 +42,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - [ ] **Phase 09 — Advanced Features**
   - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
   - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
+  - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
 
 ---
 
@@ -135,6 +137,25 @@ Filtering that produces zero results is not an error. The application reports `N
 
 ---
 
+## Job Deduplication (Phase 09.3)
+
+### Why Deduplication?
+When scraping multiple pages, the same job listing can appear on multiple pages (e.g., a featured job that's pinned, or overlapping page boundaries). Without deduplication, the final dataset would contain duplicate records, distorting export counts, analysis statistics, and visualizations.
+
+### URL as Unique Identifier
+Each `Job` object has a `url` field pointing to the job's detail page. This URL is the canonical unique identifier — two `Job` objects with the same `url` represent the same listing, regardless of whether their `title`, `company`, or `location` fields differ.
+
+### Automatic Deduplication
+`deduplicate_jobs(jobs)` in `src/dedup.py` is applied after multi-page scraping and before filtering:
+1. Jobs are scraped across all requested pages.
+2. `deduplicate_jobs()` removes any records with duplicate URLs, keeping only the first occurrence.
+3. The deduplicated list proceeds to filtering and export.
+
+### Preserves Order
+Deduplication preserves the order in which jobs first appeared. The first occurrence of each unique URL is kept; subsequent duplicates are discarded.
+
+---
+
 ## Multi-Page Scraping Concepts (Phase 09.1)
 
 ### What is Multi-Page Scraping?
@@ -166,6 +187,8 @@ HTML Response Text (per page)
 src/parser.py (parse_jobs)                   → BeautifulSoup parsing & whitespace normalization
     ↓
 src/models.py (list[Job])                    → Strongly typed, aggregated Job objects
+    ↓
+src/dedup.py (deduplicate_jobs)              → URL-based duplicate removal
     ↓
 src/filter.py (filter_jobs)                  → Case-insensitive keyword/location/company filtering
     ↓
