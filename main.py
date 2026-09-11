@@ -16,6 +16,7 @@ from src.analyzer import (
     load_jobs,
 )
 from src.exporter import export_jobs
+from src.filter import filter_jobs
 from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
 
 DEFAULT_URL: str = "https://realpython.github.io/fake-jobs/"
@@ -53,6 +54,24 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         help="Number of pages to scrape (default: %(default)s)",
     )
     parser.add_argument(
+        "--keyword",
+        type=str,
+        default=None,
+        help="Filter jobs by keyword in title (case-insensitive)",
+    )
+    parser.add_argument(
+        "--location",
+        type=str,
+        default=None,
+        help="Filter jobs by location (case-insensitive)",
+    )
+    parser.add_argument(
+        "--company",
+        type=str,
+        default=None,
+        help="Filter jobs by company name (case-insensitive)",
+    )
+    parser.add_argument(
         "--analyze",
         action="store_true",
         help="Analyze existing job CSV data and generate charts",
@@ -65,17 +84,46 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
     return parsed
 
 
-def run_scraper(url: str, output: Path, pages: int = 1) -> None:
+def run_scraper(
+    url: str,
+    output: Path,
+    pages: int = 1,
+    keyword: str | None = None,
+    location: str | None = None,
+    company: str | None = None,
+) -> None:
     print("Starting job scraper...\n")
     print(f"Target: {url}")
     if pages > 1:
         print(f"Pages: {pages}")
+    if keyword:
+        print(f"Keyword: {keyword}")
+    if location:
+        print(f"Location: {location}")
+    if company:
+        print(f"Company: {company}")
     print(f"Output: {output}\n")
 
     jobs = scrape_pages(start_url=url, pages=pages, timeout=DEFAULT_TIMEOUT)
     if not jobs:
         print("Warning: No job listings were found.")
+        export_jobs(jobs, output)
+        print(f"Exported {len(jobs)} jobs to {output}\n")
+        print("Completed successfully.")
+        return
+
     print(f"Found {len(jobs)} job listings.\n")
+
+    jobs = filter_jobs(jobs, keyword=keyword, location=location, company=company)
+
+    if keyword or location or company:
+        if not jobs:
+            print("No jobs matched the specified filters.")
+            export_jobs(jobs, output)
+            print(f"Exported {len(jobs)} jobs to {output}\n")
+            print("Completed successfully.")
+            return
+        print(f"After filtering: {len(jobs)} jobs.\n")
 
     export_jobs(jobs, output)
     print(f"Exported {len(jobs)} jobs to {output}\n")
@@ -127,6 +175,9 @@ def main(args: Sequence[str] | None = None) -> None:
                 url=parsed_args.url,
                 output=parsed_args.output,
                 pages=parsed_args.pages,
+                keyword=parsed_args.keyword,
+                location=parsed_args.location,
+                company=parsed_args.company,
             )
     except (FileNotFoundError, ValueError) as err:
         logger.error("Analysis error: %s", err)

@@ -11,6 +11,9 @@ def test_parse_args_defaults():
     assert args.output == DEFAULT_OUTPUT
     assert args.pages == 1
     assert args.analyze is False
+    assert args.keyword is None
+    assert args.location is None
+    assert args.company is None
 
 
 def test_parse_args_custom_url():
@@ -69,7 +72,38 @@ def test_parse_args_help(capsys):
     assert "--url" in captured.out
     assert "--output" in captured.out
     assert "--pages" in captured.out
+    assert "--keyword" in captured.out
+    assert "--location" in captured.out
+    assert "--company" in captured.out
     assert "--analyze" in captured.out
+
+
+def test_parse_args_filter_keyword():
+    args = parse_args(["--keyword", "python"])
+    assert args.keyword == "python"
+    assert args.location is None
+    assert args.company is None
+
+
+def test_parse_args_filter_location():
+    args = parse_args(["--location", "remote"])
+    assert args.location == "remote"
+    assert args.keyword is None
+    assert args.company is None
+
+
+def test_parse_args_filter_company():
+    args = parse_args(["--company", "google"])
+    assert args.company == "google"
+    assert args.keyword is None
+    assert args.location is None
+
+
+def test_parse_args_all_filters():
+    args = parse_args(["--keyword", "python", "--location", "remote", "--company", "acme"])
+    assert args.keyword == "python"
+    assert args.location == "remote"
+    assert args.company == "acme"
 
 
 @patch("main.scrape_pages")
@@ -88,6 +122,57 @@ def test_main_execution_flow(mock_export, mock_scrape, capsys):
     captured = capsys.readouterr()
     assert "Starting job scraper..." in captured.out
     assert "Completed successfully." in captured.out
+
+
+@patch("main.scrape_pages")
+@patch("main.filter_jobs")
+@patch("main.export_jobs")
+def test_main_filters_with_pages(mock_export, mock_filter, mock_scrape, capsys):
+    mock_jobs = [Job("Python Dev", "Corp", "Remote", "https://example.com")]
+    mock_filtered = [mock_jobs[0]]
+    mock_scrape.return_value = mock_jobs
+    mock_filter.return_value = mock_filtered
+
+    main(
+        [
+            "--url",
+            "https://custom.com",
+            "--pages",
+            "3",
+            "--keyword",
+            "python",
+            "--location",
+            "remote",
+        ]
+    )
+
+    mock_scrape.assert_called_once_with(
+        start_url="https://custom.com", pages=3, timeout=10.0
+    )
+    mock_filter.assert_called_once_with(
+        mock_jobs, keyword="python", location="remote", company=None
+    )
+    mock_export.assert_called_once_with(mock_filtered, Path("data/jobs.csv"))
+
+    captured = capsys.readouterr()
+    assert "Keyword: python" in captured.out
+    assert "Location: remote" in captured.out
+    assert "After filtering: 1 jobs." in captured.out
+
+
+@patch("main.scrape_pages")
+@patch("main.filter_jobs")
+@patch("main.export_jobs")
+def test_main_filters_zero_results(mock_export, mock_filter, mock_scrape, capsys):
+    mock_jobs = [Job("Python Dev", "Corp", "Remote", "https://example.com")]
+    mock_scrape.return_value = mock_jobs
+    mock_filter.return_value = []
+
+    main(["--keyword", "rust"])
+
+    mock_export.assert_called_once_with([], Path("data/jobs.csv"))
+    captured = capsys.readouterr()
+    assert "No jobs matched the specified filters." in captured.out
 
 
 @patch("main.run_analysis")

@@ -27,6 +27,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 07 — Command-Line Interface (CLI)**: COMPLETE
 - **Phase 08 — Data Analysis & Visualization**: COMPLETE
 - **Phase 09.1 — Pagination / Multi-Page Scraping**: COMPLETE
+- **Phase 09.2 — Job Filtering**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -39,6 +40,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - [x] **Phase 08 — Data Analysis** (COMPLETE)
 - [ ] **Phase 09 — Advanced Features**
   - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
+  - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
 
 ---
 
@@ -58,33 +60,78 @@ Scrapes multiple pages and combines results into one dataset:
 python main.py --pages 3
 ```
 
-### 3. Custom Output File
+### 3. Filtering by Keyword (Phase 09.2)
+Filters jobs whose title contains the keyword (case-insensitive):
+```bash
+python main.py --keyword python
+```
+
+### 4. Filtering by Location
+Filters jobs matching the location field (case-insensitive):
+```bash
+python main.py --location remote
+```
+
+### 5. Filtering by Company
+Filters jobs matching the company name (case-insensitive):
+```bash
+python main.py --company microsoft
+```
+
+### 6. Combining Filters with Pagination
+Multiple filters combine with AND logic and work alongside `--pages`:
+```bash
+python main.py --pages 3 --keyword python --location remote
+```
+
+### 7. Custom Output File
 Exports scraped jobs to a custom destination path:
 ```bash
 python main.py --output data/python_jobs.csv
 ```
 
-### 4. Custom Target URL and Output
+### 8. Custom Target URL and Output
 Overrides target URL, page count, and export destination:
 ```bash
 python main.py --url https://realpython.github.io/fake-jobs/ --pages 2 --output data/jobs.csv
 ```
 
-### 5. Data Analysis Mode
+### 9. Data Analysis Mode
 Analyzes the existing `data/jobs.csv` dataset and generates charts in `data/plots/`:
 ```bash
 python main.py --analyze
 ```
 
-### 6. Analyze Custom CSV File
+### 10. Analyze Custom CSV File
 ```bash
 python main.py --analyze --output data/custom_jobs.csv
 ```
 
-### 7. Display Help & Options
+### 11. Display Help & Options
 ```bash
 python main.py --help
 ```
+
+---
+
+## Job Filtering Concepts (Phase 09.2)
+
+### Filtering Layer
+`filter_jobs(jobs, keyword=None, location=None, company=None)` lives in `src/filter.py` and is applied between scraping/parsing and exporting:
+1. Jobs are scraped across all requested pages.
+2. `filter_jobs()` keeps only jobs matching every supplied criteria.
+3. The filtered list is exported to CSV.
+
+### Matching Rules
+- **Keyword**: Case-insensitive substring match against the job title.
+- **Location**: Case-insensitive substring match against the job location field.
+- **Company**: Case-insensitive substring match against the company name.
+
+### AND Logic
+When multiple filters are supplied, a job must satisfy all of them to be kept. For example, `--keyword python --location remote` keeps only jobs whose title contains *python* **and** whose location contains *remote*.
+
+### No Matches
+Filtering that produces zero results is not an error. The application reports `No jobs matched the specified filters.` and still writes a valid CSV containing only the header row.
 
 ---
 
@@ -108,9 +155,9 @@ Most real-world websites divide large datasets across multiple paginated pages. 
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-Command-Line Arguments (argparse: --url, --pages, --output, --analyze)
+Command-Line Arguments (argparse: --url, --pages, --keyword/--location/--company, --output, --analyze)
     ↓
-Target URL, Page Count & Output Path
+Target URL, Page Count, Filters & Output Path
     ↓
 src/scraper.py (scrape_pages -> fetch_page)  → Multi-page HTTP requests & fault tolerance
     ↓
@@ -119,6 +166,8 @@ HTML Response Text (per page)
 src/parser.py (parse_jobs)                   → BeautifulSoup parsing & whitespace normalization
     ↓
 src/models.py (list[Job])                    → Strongly typed, aggregated Job objects
+    ↓
+src/filter.py (filter_jobs)                  → Case-insensitive keyword/location/company filtering
     ↓
 src/exporter.py (export_jobs)                → CSV formatting & file export
     ↓
@@ -278,6 +327,9 @@ python main.py
 
 # Multi-page
 python main.py --pages 3
+
+# Multi-page with filters
+python main.py --pages 3 --keyword python --location remote
 ```
 
 ### 4. Run Analysis Mode
