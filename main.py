@@ -16,8 +16,7 @@ from src.analyzer import (
     load_jobs,
 )
 from src.exporter import export_jobs
-from src.parser import parse_jobs
-from src.scraper import DEFAULT_TIMEOUT, fetch_page
+from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
 
 DEFAULT_URL: str = "https://realpython.github.io/fake-jobs/"
 DEFAULT_OUTPUT: Path = Path("data/jobs.csv")
@@ -48,6 +47,12 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         help="Path where the CSV file will be written or read from (default: %(default)s)",
     )
     parser.add_argument(
+        "--pages",
+        type=int,
+        default=1,
+        help="Number of pages to scrape (default: %(default)s)",
+    )
+    parser.add_argument(
         "--analyze",
         action="store_true",
         help="Analyze existing job CSV data and generate charts",
@@ -55,19 +60,19 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
     parsed = parser.parse_args(args)
     if not parsed.url.strip():
         parser.error("The --url argument must not be empty.")
+    if parsed.pages < 1:
+        parser.error("The --pages argument must be a positive integer (>= 1).")
     return parsed
 
 
-def run_scraper(url: str, output: Path) -> None:
+def run_scraper(url: str, output: Path, pages: int = 1) -> None:
     print("Starting job scraper...\n")
     print(f"Target: {url}")
+    if pages > 1:
+        print(f"Pages: {pages}")
     print(f"Output: {output}\n")
 
-    response = fetch_page(url, timeout=DEFAULT_TIMEOUT)
-    print("Successfully fetched webpage.")
-    print(f"Status code: {response.status_code}\n")
-
-    jobs = parse_jobs(response.text, base_url=url)
+    jobs = scrape_pages(start_url=url, pages=pages, timeout=DEFAULT_TIMEOUT)
     if not jobs:
         print("Warning: No job listings were found.")
     print(f"Found {len(jobs)} job listings.\n")
@@ -118,7 +123,11 @@ def main(args: Sequence[str] | None = None) -> None:
         if parsed_args.analyze:
             run_analysis(csv_path=parsed_args.output)
         else:
-            run_scraper(url=parsed_args.url, output=parsed_args.output)
+            run_scraper(
+                url=parsed_args.url,
+                output=parsed_args.output,
+                pages=parsed_args.pages,
+            )
     except (FileNotFoundError, ValueError) as err:
         logger.error("Analysis error: %s", err)
         print(f"Error during analysis: {err}", file=sys.stderr)

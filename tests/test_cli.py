@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import pytest
 from main import DEFAULT_OUTPUT, DEFAULT_URL, main, parse_args
 from src.models import Job
@@ -9,6 +9,7 @@ def test_parse_args_defaults():
     args = parse_args([])
     assert args.url == DEFAULT_URL
     assert args.output == DEFAULT_OUTPUT
+    assert args.pages == 1
     assert args.analyze is False
 
 
@@ -22,6 +23,21 @@ def test_parse_args_custom_output():
     args = parse_args(["--output", "custom_data/out.csv"])
     assert args.url == DEFAULT_URL
     assert args.output == Path("custom_data/out.csv")
+
+
+def test_parse_args_custom_pages():
+    args = parse_args(["--pages", "3"])
+    assert args.pages == 3
+
+
+def test_parse_args_invalid_pages_zero():
+    with pytest.raises(SystemExit):
+        parse_args(["--pages", "0"])
+
+
+def test_parse_args_invalid_pages_negative():
+    with pytest.raises(SystemExit):
+        parse_args(["--pages", "-2"])
 
 
 def test_parse_args_analyze_flag():
@@ -52,25 +68,21 @@ def test_parse_args_help(capsys):
     captured = capsys.readouterr()
     assert "--url" in captured.out
     assert "--output" in captured.out
+    assert "--pages" in captured.out
     assert "--analyze" in captured.out
 
 
-@patch("main.fetch_page")
-@patch("main.parse_jobs")
+@patch("main.scrape_pages")
 @patch("main.export_jobs")
-def test_main_execution_flow(mock_export, mock_parse, mock_fetch, capsys):
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.text = "<html></html>"
-    mock_fetch.return_value = mock_response
-
+def test_main_execution_flow(mock_export, mock_scrape, capsys):
     mock_jobs = [Job("Dev", "Corp", "Remote", "https://example.com")]
-    mock_parse.return_value = mock_jobs
+    mock_scrape.return_value = mock_jobs
 
-    main(["--url", "https://custom.com", "--output", "out.csv"])
+    main(["--url", "https://custom.com", "--output", "out.csv", "--pages", "2"])
 
-    mock_fetch.assert_called_once_with("https://custom.com", timeout=10.0)
-    mock_parse.assert_called_once_with("<html></html>", base_url="https://custom.com")
+    mock_scrape.assert_called_once_with(
+        start_url="https://custom.com", pages=2, timeout=10.0
+    )
     mock_export.assert_called_once_with(mock_jobs, Path("out.csv"))
 
     captured = capsys.readouterr()

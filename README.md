@@ -26,6 +26,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 06 — Refactoring & Error Handling**: COMPLETE
 - **Phase 07 — Command-Line Interface (CLI)**: COMPLETE
 - **Phase 08 — Data Analysis & Visualization**: COMPLETE
+- **Phase 09.1 — Pagination / Multi-Page Scraping**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -37,10 +38,11 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - [x] **Phase 07 — CLI** (COMPLETE)
 - [x] **Phase 08 — Data Analysis** (COMPLETE)
 - [ ] **Phase 09 — Advanced Features**
+  - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
 
 ---
 
-## Command-Line Interface (CLI) Usage (Phase 07 & 08)
+## Command-Line Interface (CLI) Usage
 
 Command-line arguments allow users and automated workflows to configure the scraper and data analysis dynamically at runtime.
 
@@ -50,33 +52,54 @@ Scrapes the default target URL and writes to `data/jobs.csv`:
 python main.py
 ```
 
-### 2. Custom Output File
+### 2. Multi-Page Scraping (Phase 09.1)
+Scrapes multiple pages and combines results into one dataset:
+```bash
+python main.py --pages 3
+```
+
+### 3. Custom Output File
 Exports scraped jobs to a custom destination path:
 ```bash
 python main.py --output data/python_jobs.csv
 ```
 
-### 3. Custom Target URL and Output
-Overrides both target URL and export destination:
+### 4. Custom Target URL and Output
+Overrides target URL, page count, and export destination:
 ```bash
-python main.py --url https://realpython.github.io/fake-jobs/ --output data/jobs.csv
+python main.py --url https://realpython.github.io/fake-jobs/ --pages 2 --output data/jobs.csv
 ```
 
-### 4. Data Analysis Mode
+### 5. Data Analysis Mode
 Analyzes the existing `data/jobs.csv` dataset and generates charts in `data/plots/`:
 ```bash
 python main.py --analyze
 ```
 
-### 5. Analyze Custom CSV File
+### 6. Analyze Custom CSV File
 ```bash
 python main.py --analyze --output data/custom_jobs.csv
 ```
 
-### 6. Display Help & Options
+### 7. Display Help & Options
 ```bash
 python main.py --help
 ```
+
+---
+
+## Multi-Page Scraping Concepts (Phase 09.1)
+
+### What is Multi-Page Scraping?
+Most real-world websites divide large datasets across multiple paginated pages. Multi-page scraping systematically requests each successive page, extracts records using the core parser, and aggregates the results into a single dataset.
+
+### URL Generation Strategy
+`build_page_url(base_url, page)` standardizes query parameter handling:
+- **Page 1**: Requests the initial base URL directly.
+- **Page > 1**: Appends or updates the `page` query parameter (e.g. `https://realpython.github.io/fake-jobs/?page=2`) using Python's standard `urllib.parse` module.
+
+### Fault-Tolerant Scraping
+`scrape_pages(start_url, pages)` handles per-page request failures gracefully. If an individual page encounters a network error, a warning is logged and scraping continues for the remaining pages, preventing the entire batch from crashing.
 
 ---
 
@@ -85,23 +108,25 @@ python main.py --help
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-Website (https://realpython.github.io/fake-jobs/)
+Command-Line Arguments (argparse: --url, --pages, --output, --analyze)
     ↓
-src/scraper.py (fetch_page)       → HTTP GET request, timeout & error handling
+Target URL, Page Count & Output Path
     ↓
-HTML Response Text
+src/scraper.py (scrape_pages -> fetch_page)  → Multi-page HTTP requests & fault tolerance
     ↓
-src/parser.py (parse_jobs)        → BeautifulSoup parsing & whitespace normalization
+HTML Response Text (per page)
     ↓
-src/models.py (list[Job])         → Strongly typed, structured Job objects
+src/parser.py (parse_jobs)                   → BeautifulSoup parsing & whitespace normalization
     ↓
-src/exporter.py (export_jobs)     → CSV formatting & file export
+src/models.py (list[Job])                    → Strongly typed, aggregated Job objects
     ↓
-data/jobs.csv                     → Persisted tabular dataset
+src/exporter.py (export_jobs)                → CSV formatting & file export
     ↓
-src/analyzer.py (run_analysis)    → Pandas aggregation & Matplotlib visualizations
+data/jobs.csv                                → Persisted tabular dataset
     ↓
-data/plots/ (*.png)               → Exported chart figures
+src/analyzer.py (run_analysis)               → Pandas aggregation & Matplotlib visualizations
+    ↓
+data/plots/ (*.png)                          → Exported chart figures
 ```
 
 `main.py` coordinates this pipeline end-to-end with centralized logging, argument validation, and safe exception handling.
@@ -138,7 +163,7 @@ Visualizations are automatically saved to `data/plots/`:
 The application uses Python's standard `logging` library with structured module-level loggers (`logging.getLogger(__name__)`). Operations are categorized with appropriate severity levels:
 - **DEBUG**: Fine-grained diagnostic information.
 - **INFO**: Milestones in execution (fetching URLs, parse counts, export completion).
-- **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards).
+- **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards, failed page fetch).
 - **ERROR**: Actionable failures (network timeouts, connection loss, file system permission errors).
 
 ### Layer-Appropriate Error Handling
@@ -190,6 +215,9 @@ An HTTP GET request is a method used to retrieve data from a specified resource 
 
 ### What is the `requests` Library?
 `requests` is an HTTP library for Python designed to make sending HTTP/1.1 requests simple and human-friendly.
+
+### What is an HTTP Status Code?
+An HTTP status code is a three-digit integer returned by the server indicating the outcome of the request (`200 OK`, `404 Not Found`, `500 Internal Server Error`).
 
 ---
 
@@ -245,7 +273,11 @@ pip install -r requirements.txt
 
 ### 3. Run Entry Point (Scrape & Export)
 ```bash
+# Default (1 page)
 python main.py
+
+# Multi-page
+python main.py --pages 3
 ```
 
 ### 4. Run Analysis Mode
