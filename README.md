@@ -27,6 +27,12 @@ Scraping two pages, deduplicating, filtering for `python` jobs, and exporting th
 
 ![Job Listings Scraper CLI demo](docs/images/demo-cli.png)
 
+## Architecture
+
+The application is organized as a decoupled processing pipeline: each stage runs independently and passes typed data to the next. Logging and error handling are cross-cutting concerns applied across the relevant layers rather than a pipeline stage:
+
+![Job Listings Scraper architecture](docs/images/architecture.png)
+
 ## Target Website
 - **URL**: https://realpython.github.io/fake-jobs/
 - **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
