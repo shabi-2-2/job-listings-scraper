@@ -51,7 +51,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
 - [x] **Phase 07 — CLI** (COMPLETE)
 - [x] **Phase 08 — Data Analysis** (COMPLETE)
-- [ ] **Phase 09 — Advanced Features**
+- [x] **Phase 09 — Advanced Features**
   - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
   - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
   - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
