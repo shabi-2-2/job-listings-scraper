@@ -8,7 +8,7 @@ Modular, fault-tolerant Python web scraper for extracting, filtering, deduplicat
 ![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)
 ![Matplotlib](https://img.shields.io/badge/Matplotlib-11557c)
 ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?logo=pytest&logoColor=white)
-![tests](https://img.shields.io/badge/tests-134%20passing-2EA043)
+![Tests](https://github.com/shabi-2-2/job-listings-scraper/actions/workflows/tests.yml/badge.svg)
 
 ## Technology Stack
 - **Language**: Python 3.10+
@@ -514,13 +514,15 @@ tests/                  # Test suite (one file per module)
 
 ## Testing
 
-Run the full test suite (one test file per module in `tests/`):
+Run the full test suite locally (one test file per module in `tests/`):
 
 ```bash
-pytest
+python -m pytest
 # or
 python -m unittest discover -s tests
 ```
+
+GitHub Actions automatically runs the test suite on every push to `main` and on every pull request targeting `main`. The current status is shown by the **Tests** badge at the top of this README.
 
 ---
 
