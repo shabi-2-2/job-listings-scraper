@@ -543,3 +543,8 @@ GitHub Actions automatically runs the test suite on every push to `main` and on 
   - [x] **Phase 09.5 — Application Logging** (COMPLETE)
   - [x] **Phase 09.6 — Robustness & Fault Tolerance** (COMPLETE)
   - [x] **Phase 09.7 — Final Testing & Documentation** (COMPLETE)
+
+
+## Project URL
+
+https://github.com/shabi-2-2/job-listings-scraper
