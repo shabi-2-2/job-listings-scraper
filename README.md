@@ -15,13 +15,13 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Analysis & visualization** — pandas statistics with Matplotlib charts saved to `data/plots/`.
 - **Production-style CLI** — argparse with validation, centralized logging, and INFO/DEBUG/WARNING verbosity controls.
 
-## Planned Technology Stack
+## Technology Stack
 - **Language**: Python 3.10+
 - **HTTP Client**: `requests` (Phase 02)
 - **HTML Parsing**: `beautifulsoup4` (Phase 03)
 - **Data Modeling**: Standard library `dataclasses` (Phase 04)
-- **Data Export**: Built-in `csv` module (Phase 05)
-- **Logging & Error Handling**: Standard library `logging` (Phase 06)
+- **Data Export**: Built-in `csv` and `json` modules (Phases 05, 09.4)
+- **Logging & Error Handling**: Standard library `logging` with structured application logging, CLI verbosity controls, and fault-tolerant request handling (Phases 06, 09.5, 09.6)
 - **Command-Line Interface**: Standard library `argparse` (Phase 07)
 - **Data Analysis & Visualization**: `pandas`, `matplotlib` (Phase 08)
 
