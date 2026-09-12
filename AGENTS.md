@@ -11,8 +11,9 @@ Python web scraper that extracts, parses, models, deduplicates, filters, exports
 - Phase 09.4: configurable output (`--output` custom CSV path, `--json` optional JSON export via `export_jobs_json`, automatic parent-dir creation via pathlib)
 - Phase 09.5: application logging (`setup_logging(level)` in main.py, module-level loggers everywhere, `-v/--verbose` -> DEBUG, `-q/--quiet` -> WARNING, default INFO)
 - Phase 09.6: robustness & fault tolerance (retry with backoff in `fetch_page`, retryable = Timeout/ConnectionError/HTTP 5xx, `--timeout` and `--retries` CLI args, page-level skip after retries exhausted in `scrape_pages`, WARNING for empty job cards in `parse_jobs`)
+- Phase 09.7: final polish & docs (unused `fetch_page` import removed from main.py, README expanded with Key Features/Project Structure/updated logging levels & pipeline diagram, roadmap finalized)
 
-There is NO current in-progress phase. Next work would be a new Phase (10).
+Phase 09 (Advanced Features) is now fully complete. No in-progress phase; next work would be a new Phase (10).
 
 ## Architecture / Data Flow
 ```

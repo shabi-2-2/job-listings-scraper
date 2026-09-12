@@ -7,6 +7,14 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **URL**: https://realpython.github.io/fake-jobs/
 - **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
 
+## Key Features
+- **Fault-tolerant multi-page scraping** — explicit per-request timeouts, bounded retries with backoff for transient failures (timeouts, connection errors, HTTP 5xx), and per-page isolation so one failing page never crashes a run.
+- **Structured parsing** — BeautifulSoup extraction with whitespace normalization and graceful handling of malformed or incomplete HTML.
+- **Deduplication & filtering** — URL-based duplicate removal plus case-insensitive keyword/location/company filters (AND logic).
+- **Flexible output** — CSV (default) with optional JSON export, custom output paths, and automatic directory creation.
+- **Analysis & visualization** — pandas statistics with Matplotlib charts saved to `data/plots/`.
+- **Production-style CLI** — argparse with validation, centralized logging, and INFO/DEBUG/WARNING verbosity controls.
+
 ## Planned Technology Stack
 - **Language**: Python 3.10+
 - **HTTP Client**: `requests` (Phase 02)
@@ -32,6 +40,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 09.4 — Configurable Output**: COMPLETE
 - **Phase 09.5 — Application Logging**: COMPLETE
 - **Phase 09.6 — Robustness & Fault Tolerance**: COMPLETE
+- **Phase 09.7 — Final Testing, Polish & Documentation**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -49,6 +58,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
   - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
   - [x] **Phase 09.5 — Application Logging** (COMPLETE)
   - [x] **Phase 09.6 — Robustness & Fault Tolerance** (COMPLETE)
+  - [x] **Phase 09.7 — Final Testing & Documentation** (COMPLETE)
 
 ---
 
@@ -280,7 +290,7 @@ Most real-world websites divide large datasets across multiple paginated pages. 
 - **Page > 1**: Appends or updates the `page` query parameter (e.g. `https://realpython.github.io/fake-jobs/?page=2`) using Python's standard `urllib.parse` module.
 
 ### Fault-Tolerant Scraping
-`scrape_pages(start_url, pages)` handles per-page request failures gracefully. If an individual page encounters a network error, a warning is logged and scraping continues for the remaining pages, preventing the entire batch from crashing.
+`scrape_pages(start_url, pages)` processes each page independently: if a page still fails after its retry attempts are exhausted, it is logged and skipped, and scraping continues with the remaining pages — the entire batch never crashes because of one page.
 
 ---
 
@@ -289,7 +299,8 @@ Most real-world websites divide large datasets across multiple paginated pages. 
 The scraper follows a clean, decoupled data pipeline:
 
 ```
-Command-Line Arguments (argparse: --url, --pages, --keyword/--location/--company, --output, --analyze)
+Command-Line Arguments (argparse: --url, --pages, --keyword/--location/--company,
+--output, --json, --timeout, --retries, --analyze, --verbose/--quiet)
     ↓
 Target URL, Page Count, Filters & Output Path
     ↓
@@ -348,8 +359,8 @@ Visualizations are automatically saved to `data/plots/`:
 The application uses Python's standard `logging` library with structured module-level loggers (`logging.getLogger(__name__)`). Operations are categorized with appropriate severity levels:
 - **DEBUG**: Fine-grained diagnostic information.
 - **INFO**: Milestones in execution (fetching URLs, parse counts, export completion).
-- **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards, failed page fetch).
-- **ERROR**: Actionable failures (network timeouts, connection loss, file system permission errors).
+- **WARNING**: Non-fatal anomalies (empty HTML input, missing listing cards, retried request failures).
+- **ERROR**: Actionable failures (requests that fail after retries, file system permission errors).
 
 ### Layer-Appropriate Error Handling
 Errors are captured and reported close to where they occur:
@@ -435,6 +446,26 @@ Inspection of `https://realpython.github.io/fake-jobs/` identified the following
 | **Location** | `<p class="location">` | `Stewartbury, AA` |
 | **Date Posted** | `<time datetime="YYYY-MM-DD">` | `2021-04-08` |
 | **Job Detail / Apply URL** | Second `<a>` tag inside `<footer class="card-footer">` (`class="card-footer-item"`) | `href="https://realpython.github.io/fake-jobs/jobs/senior-python-developer-0.html"` |
+
+---
+
+## Project Structure
+
+```
+main.py                 # CLI entry point: argument parsing, logging setup, pipeline orchestration
+requirements.txt        # Runtime dependencies
+data/jobs.csv           # Default scraped dataset
+data/plots/             # Generated analysis charts
+src/
+├── scraper.py          # HTTP fetching, retries, multi-page scraping
+├── parser.py           # HTML -> Job objects
+├── models.py           # Job dataclass
+├── dedup.py            # URL-based deduplication
+├── filter.py           # Keyword/location/company filtering
+├── exporter.py         # CSV & JSON export
+└── analyzer.py         # pandas statistics & Matplotlib charts
+tests/                  # Test suite (one file per module)
+```
 
 ---
 

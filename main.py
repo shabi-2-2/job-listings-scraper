@@ -22,7 +22,6 @@ from src.models import Job
 from src.scraper import (
     DEFAULT_RETRIES,
     DEFAULT_TIMEOUT,
-    fetch_page,
     scrape_pages,
 )
 
