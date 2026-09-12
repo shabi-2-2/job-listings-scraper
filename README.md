@@ -30,6 +30,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 09.2 — Job Filtering**: COMPLETE
 - **Phase 09.3 — Job Deduplication**: COMPLETE
 - **Phase 09.4 — Configurable Output**: COMPLETE
+- **Phase 09.5 — Application Logging**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -45,6 +46,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
   - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
   - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
   - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
+  - [x] **Phase 09.5 — Application Logging** (COMPLETE)
 
 ---
 
@@ -127,6 +129,55 @@ Combined with a custom output path (parent directories are created automatically
 python main.py --output data/results/jobs.csv --json
 ```
 Writes both `data/results/jobs.csv` and `data/results/jobs.json`.
+
+### 13. Verbose Debug Logging
+Enables DEBUG-level diagnostic output (network internals, pipeline configuration):
+```bash
+python main.py --verbose
+# or
+python main.py -v
+```
+
+### 14. Quiet Mode
+Suppresses log output below the WARNING level; only user-facing results remain:
+```bash
+python main.py --quiet
+# or
+python main.py -q
+```
+
+---
+
+## Application Logging (Phase 09.5)
+
+### Why Logging?
+Logging gives operators a structured, timestamped record of what the scraper did — which pages were fetched, how many jobs were parsed, deduplicated, filtered, and exported — without mixing diagnostic detail into the user-facing results that go to stdout.
+
+### Central Configuration
+Logging is configured once in `main.py` via `setup_logging(level)`. Every module (`src/scraper.py`, `src/parser.py`, `src/dedup.py`, `src/filter.py`, `src/exporter.py`, `src/analyzer.py`) declares its own module-level `logger = logging.getLogger(__name__)` and never configures root logging itself.
+
+### Log Levels
+- **INFO (default)**: Pipeline milestones — scraping start, per-page progress, job counts, deduplication/filtering results, exports, and completion.
+- **DEBUG (`--verbose`/`-v`)**: Detailed diagnostics including pipeline configuration and HTTP internals.
+- **WARNING (`--quiet`/`-q`)** or higher: Only warnings and errors — failed page fetches, missing job cards, and similar recoverable issues.
+
+### Logged Pipeline Milestones
+1. `Starting job scraping pipeline` with target URL, page count, and output path.
+2. Per-page scraping and parse results (from `src.scraper` / `src.parser`).
+3. `Scraping complete: found N job listings`.
+4. Deduplication results (`src.dedup` logs `N -> M unique jobs`).
+5. Filtering results (`src.filter` logs input/output counts).
+6. CSV/JSON export results (`src.exporter` logs destination paths).
+7. `Pipeline completed successfully` with the final exported count.
+
+### Example Output
+```text
+2026-09-12 23:54:47 [INFO] __main__: Starting job scraping pipeline (target=https://realpython.github.io/fake-jobs/, pages=1, output=data/jobs.csv)
+2026-09-12 23:54:47 [INFO] src.scraper: Scraping page 1 of 1 from https://realpython.github.io/fake-jobs/
+2026-09-12 23:54:47 [INFO] src.parser: Successfully parsed 100 job listings.
+2026-09-12 23:54:47 [INFO] src.dedup: Deduplicated 100 jobs -> 100 unique jobs
+2026-09-12 23:54:47 [INFO] src.exporter: Successfully exported 100 jobs to data/jobs.csv
+```
 
 ---
 

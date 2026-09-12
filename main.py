@@ -24,13 +24,24 @@ from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
 DEFAULT_URL: str = "https://realpython.github.io/fake-jobs/"
 DEFAULT_OUTPUT: Path = Path("data/jobs.csv")
 DEFAULT_PLOTS_DIR: Path = Path("data/plots")
+DEFAULT_LOG_LEVEL: int = logging.INFO
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+LOG_FORMAT: str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+LOG_DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S"
+
 logger = logging.getLogger(__name__)
+
+
+def setup_logging(level: int = DEFAULT_LOG_LEVEL) -> None:
+    logging.basicConfig(
+        level=level,
+        format=LOG_FORMAT,
+        datefmt=LOG_DATE_FORMAT,
+    )
+    root = logging.getLogger()
+    root.setLevel(level)
+    for handler in root.handlers:
+        handler.setLevel(level)
 
 
 def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
@@ -83,6 +94,19 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Additionally export jobs as JSON next to the CSV output file",
     )
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable debug-level logging output",
+    )
+    verbosity.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress log output below the WARNING level",
+    )
     parsed = parser.parse_args(args)
     if not parsed.url.strip():
         parser.error("The --url argument must not be empty.")
@@ -109,6 +133,19 @@ def run_scraper(
     company: str | None = None,
     json_output: bool = False,
 ) -> None:
+    logger.info(
+        "Starting job scraping pipeline (target=%s, pages=%d, output=%s)",
+        url,
+        pages,
+        output,
+    )
+    logger.debug(
+        "Pipeline configuration: keyword=%s, location=%s, company=%s, json_output=%s",
+        keyword,
+        location,
+        company,
+        json_output,
+    )
     print("Starting job scraper...\n")
     print(f"Target: {url}")
     if pages > 1:
@@ -122,9 +159,12 @@ def run_scraper(
     print(f"Output: {output}\n")
 
     jobs = scrape_pages(start_url=url, pages=pages, timeout=DEFAULT_TIMEOUT)
+    logger.info("Scraping complete: found %d job listings", len(jobs))
     if not jobs:
+        logger.warning("No job listings were found for %s", url)
         print("Warning: No job listings were found.")
         export_results(jobs, output, json_output)
+        logger.info("Pipeline completed: exported 0 jobs to %s", output)
         print("Completed successfully.")
         return
 
@@ -136,13 +176,18 @@ def run_scraper(
 
     if keyword or location or company:
         if not jobs:
+            logger.info("No jobs matched the specified filters")
             print("No jobs matched the specified filters.")
             export_results(jobs, output, json_output)
+            logger.info("Pipeline completed: exported 0 jobs to %s", output)
             print("Completed successfully.")
             return
         print(f"After filtering: {len(jobs)} jobs.\n")
 
     export_results(jobs, output, json_output)
+    logger.info(
+        "Pipeline completed successfully: exported %d jobs to %s", len(jobs), output
+    )
     print("Completed successfully.")
 
 
@@ -179,11 +224,19 @@ def run_analysis(csv_path: Path, plots_dir: Path = DEFAULT_PLOTS_DIR) -> None:
         print(f"{idx}. {title} — {count} jobs")
 
     print(f"\nVisualizations saved to {plots_dir}")
+    logger.info("Analysis complete: %d jobs from %s", total_jobs, csv_path)
 
 
 def main(args: Sequence[str] | None = None) -> None:
     try:
         parsed_args = parse_args(args)
+        if parsed_args.verbose:
+            level = logging.DEBUG
+        elif parsed_args.quiet:
+            level = logging.WARNING
+        else:
+            level = DEFAULT_LOG_LEVEL
+        setup_logging(level)
         if parsed_args.analyze:
             run_analysis(csv_path=parsed_args.output)
         else:
