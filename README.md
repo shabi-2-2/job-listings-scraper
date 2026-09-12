@@ -1,19 +1,29 @@
 # Job Listings Scraper
 
-## Objective
-A Python-based web scraping application designed to extract, parse, model, export, and analyze job listing data from the Fake Jobs practice website.
+A modular, fault-tolerant Python web scraper that extracts job listings from the fake-jobs practice board, parses and normalizes each listing into a typed model, and runs it through a configurable pipeline — pagination, URL-based deduplication, case-insensitive filtering, and CSV/JSON export. The pipeline is driven by a validated CLI with structured logging and retry/backoff handling, and exported datasets can be analyzed and visualized with pandas and Matplotlib.
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Requests](https://img.shields.io/badge/Requests-2C8EBB)
+![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-266b45)
+![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-11557c)
+![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?logo=pytest&logoColor=white)
+![tests](https://img.shields.io/badge/tests-134%20passing-2EA043)
+
+## Key Features
+- **Multi-page scraping** — paginated fetching with per-page fault tolerance.
+- **URL-based deduplication** — removes duplicate listings while preserving order.
+- **Case-insensitive filtering** — by keyword, location, and company (AND logic).
+- **CSV + JSON export** — default CSV, optional JSON, automatic directory creation.
+- **Configurable output paths** — custom destinations via `--output`.
+- **Structured logging** — INFO/DEBUG/WARNING levels via `-v` and `-q`.
+- **Retry/backoff & timeouts** — bounded retries for timeouts, connection errors, and HTTP 5xx.
+- **CLI configuration** — pages, filters, timeouts, retries, output, and analysis flags.
+- **Analysis & visualization** — pandas statistics and Matplotlib charts in `data/plots/`.
 
 ## Target Website
 - **URL**: https://realpython.github.io/fake-jobs/
 - **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
-
-## Key Features
-- **Fault-tolerant multi-page scraping** — explicit per-request timeouts, bounded retries with backoff for transient failures (timeouts, connection errors, HTTP 5xx), and per-page isolation so one failing page never crashes a run.
-- **Structured parsing** — BeautifulSoup extraction with whitespace normalization and graceful handling of malformed or incomplete HTML.
-- **Deduplication & filtering** — URL-based duplicate removal plus case-insensitive keyword/location/company filters (AND logic).
-- **Flexible output** — CSV (default) with optional JSON export, custom output paths, and automatic directory creation.
-- **Analysis & visualization** — pandas statistics with Matplotlib charts saved to `data/plots/`.
-- **Production-style CLI** — argparse with validation, centralized logging, and INFO/DEBUG/WARNING verbosity controls.
 
 ## Technology Stack
 - **Language**: Python 3.10+
