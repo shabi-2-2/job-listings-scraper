@@ -21,6 +21,12 @@ A modular, fault-tolerant Python web scraper that extracts job listings from the
 - **CLI configuration** — pages, filters, timeouts, retries, output, and analysis flags.
 - **Analysis & visualization** — pandas statistics and Matplotlib charts in `data/plots/`.
 
+## Demo
+
+Scraping two pages, deduplicating, filtering for `python` jobs, and exporting the result to CSV — all through the default CLI logging mode:
+
+![Job Listings Scraper CLI demo](docs/images/demo-cli.png)
+
 ## Target Website
 - **URL**: https://realpython.github.io/fake-jobs/
 - **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
