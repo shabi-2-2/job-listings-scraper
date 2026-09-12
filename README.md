@@ -1,6 +1,6 @@
 # Job Listings Scraper
 
-A modular, fault-tolerant Python web scraper that extracts job listings from the fake-jobs practice board, parses and normalizes each listing into a typed model, and runs it through a configurable pipeline — pagination, URL-based deduplication, case-insensitive filtering, and CSV/JSON export. The pipeline is driven by a validated CLI with structured logging and retry/backoff handling, and exported datasets can be analyzed and visualized with pandas and Matplotlib.
+Modular, fault-tolerant Python web scraper for extracting, filtering, deduplicating, exporting, and analyzing job listings from the fake-jobs practice board — driven by a validated CLI, structured logging, and retry/backoff handling.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Requests](https://img.shields.io/badge/Requests-2C8EBB)
@@ -9,33 +9,6 @@ A modular, fault-tolerant Python web scraper that extracts job listings from the
 ![Matplotlib](https://img.shields.io/badge/Matplotlib-11557c)
 ![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?logo=pytest&logoColor=white)
 ![tests](https://img.shields.io/badge/tests-134%20passing-2EA043)
-
-## Key Features
-- **Multi-page scraping** — paginated fetching with per-page fault tolerance.
-- **URL-based deduplication** — removes duplicate listings while preserving order.
-- **Case-insensitive filtering** — by keyword, location, and company (AND logic).
-- **CSV + JSON export** — default CSV, optional JSON, automatic directory creation.
-- **Configurable output paths** — custom destinations via `--output`.
-- **Structured logging** — INFO/DEBUG/WARNING levels via `-v` and `-q`.
-- **Retry/backoff & timeouts** — bounded retries for timeouts, connection errors, and HTTP 5xx.
-- **CLI configuration** — pages, filters, timeouts, retries, output, and analysis flags.
-- **Analysis & visualization** — pandas statistics and Matplotlib charts in `data/plots/`.
-
-## Demo
-
-Scraping two pages, deduplicating, filtering for `python` jobs, and exporting the result to CSV — all through the default CLI logging mode:
-
-![Job Listings Scraper CLI demo](docs/images/demo-cli.png)
-
-## Architecture
-
-The application is organized as a decoupled processing pipeline: each stage runs independently and passes typed data to the next. Logging and error handling are cross-cutting concerns applied across the relevant layers rather than a pipeline stage:
-
-![Job Listings Scraper architecture](docs/images/architecture.png)
-
-## Target Website
-- **URL**: https://realpython.github.io/fake-jobs/
-- **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
 
 ## Technology Stack
 - **Language**: Python 3.10+
@@ -64,23 +37,71 @@ The application is organized as a decoupled processing pipeline: each stage runs
 - **Phase 09.6 — Robustness & Fault Tolerance**: COMPLETE
 - **Phase 09.7 — Final Testing, Polish & Documentation**: COMPLETE
 
-## Project Roadmap
-- [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
-- [x] **Phase 02 — Fetch Webpage** (COMPLETE)
-- [x] **Phase 03 — Parse HTML** (COMPLETE)
-- [x] **Phase 04 — Job Data Model** (COMPLETE)
-- [x] **Phase 05 — CSV Export** (COMPLETE)
-- [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
-- [x] **Phase 07 — CLI** (COMPLETE)
-- [x] **Phase 08 — Data Analysis** (COMPLETE)
-- [x] **Phase 09 — Advanced Features**
-  - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
-  - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
-  - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
-  - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
-  - [x] **Phase 09.5 — Application Logging** (COMPLETE)
-  - [x] **Phase 09.6 — Robustness & Fault Tolerance** (COMPLETE)
-  - [x] **Phase 09.7 — Final Testing & Documentation** (COMPLETE)
+## Key Features
+- **Multi-page scraping** — paginated fetching with per-page fault tolerance.
+- **URL-based deduplication** — removes duplicate listings while preserving order.
+- **Case-insensitive filtering** — by keyword, location, and company (AND logic).
+- **CSV + JSON export** — default CSV, optional JSON, automatic directory creation.
+- **Configurable output paths** — custom destinations via `--output`.
+- **Structured logging** — INFO/DEBUG/WARNING levels via `-v` and `-q`.
+- **Retry/backoff & timeouts** — bounded retries for timeouts, connection errors, and HTTP 5xx.
+- **CLI configuration** — pages, filters, timeouts, retries, output, and analysis flags.
+- **Analysis & visualization** — pandas statistics and Matplotlib charts in `data/plots/`.
+
+## Target Website
+- **URL**: https://realpython.github.io/fake-jobs/
+- **Description**: A static mock job board provided by Real Python specifically designed for practicing web scraping techniques without rate limits or dynamic JavaScript rendering hurdles.
+
+## Demo
+
+Scraping two pages, deduplicating, filtering for `python` jobs, and exporting the result to CSV — all through the default CLI logging mode:
+
+![Job Listings Scraper CLI demo](docs/images/demo-cli.png)
+
+## Architecture
+
+The application is organized as a decoupled processing pipeline: each stage runs independently and passes typed data to the next. Logging and error handling are cross-cutting concerns applied across the relevant layers rather than a pipeline stage:
+
+![Job Listings Scraper architecture](docs/images/architecture.png)
+
+---
+
+## Installation & Setup
+
+### 1. Virtual Environment Setup
+Activate the `.venv` environment:
+
+```bash
+# On macOS/Linux
+source .venv/bin/activate
+
+# On Windows
+.venv\Scripts\activate
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the Scraper
+```bash
+# Default (1 page)
+python main.py
+
+# Multi-page
+python main.py --pages 3
+
+# Multi-page with filters
+python main.py --pages 3 --keyword python --location remote
+```
+
+### 4. Run Analysis Mode
+```bash
+python main.py --analyze
+```
+
+See [Command-Line Interface (CLI) Usage](#command-line-interface-cli-usage) for the full set of options.
 
 ---
 
@@ -491,44 +512,32 @@ tests/                  # Test suite (one file per module)
 
 ---
 
-## Getting Started
+## Testing
 
-### 1. Virtual Environment Setup
-Activate the `.venv` environment:
+Run the full test suite (one test file per module in `tests/`):
 
-```bash
-# On macOS/Linux
-source .venv/bin/activate
-
-# On Windows
-.venv\Scripts\activate
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Run Entry Point (Scrape & Export)
-```bash
-# Default (1 page)
-python main.py
-
-# Multi-page
-python main.py --pages 3
-
-# Multi-page with filters
-python main.py --pages 3 --keyword python --location remote
-```
-
-### 4. Run Analysis Mode
-```bash
-python main.py --analyze
-```
-
-### 5. Run Tests
 ```bash
 pytest
 # or
 python -m unittest discover -s tests
 ```
+
+---
+
+## Project Roadmap
+- [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
+- [x] **Phase 02 — Fetch Webpage** (COMPLETE)
+- [x] **Phase 03 — Parse HTML** (COMPLETE)
+- [x] **Phase 04 — Job Data Model** (COMPLETE)
+- [x] **Phase 05 — CSV Export** (COMPLETE)
+- [x] **Phase 06 — Refactoring & Error Handling** (COMPLETE)
+- [x] **Phase 07 — CLI** (COMPLETE)
+- [x] **Phase 08 — Data Analysis** (COMPLETE)
+- [x] **Phase 09 — Advanced Features**
+  - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
+  - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
+  - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
+  - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
+  - [x] **Phase 09.5 — Application Logging** (COMPLETE)
+  - [x] **Phase 09.6 — Robustness & Fault Tolerance** (COMPLETE)
+  - [x] **Phase 09.7 — Final Testing & Documentation** (COMPLETE)
