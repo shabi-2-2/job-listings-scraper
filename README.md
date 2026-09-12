@@ -7,6 +7,7 @@ A modular, fault-tolerant Python web scraper for extracting, filtering,
 deduplicating, exporting, and analyzing job listings.
 
 Project URL: https://github.com/shabi-2-2/job-listings-scraper
+
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Requests](https://img.shields.io/badge/Requests-2C8EBB)
 ![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-266b45)
