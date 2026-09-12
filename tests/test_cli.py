@@ -48,6 +48,24 @@ def test_parse_args_analyze_flag():
     assert args.analyze is True
 
 
+def test_parse_args_json_flag():
+    args = parse_args(["--json"])
+    assert args.json is True
+
+
+def test_parse_args_json_default_false():
+    args = parse_args([])
+    assert args.json is False
+
+
+def test_parse_args_help_includes_json(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        parse_args(["--help"])
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert "--json" in captured.out
+
+
 def test_parse_args_custom_url_and_output():
     args = parse_args(["--url", "https://example.com", "--output", "out.csv"])
     assert args.url == "https://example.com"
@@ -179,3 +197,43 @@ def test_main_filters_zero_results(mock_export, mock_filter, mock_scrape, capsys
 def test_main_analyze_flow(mock_analysis):
     main(["--analyze", "--output", "data/custom.csv"])
     mock_analysis.assert_called_once_with(csv_path=Path("data/custom.csv"))
+
+
+@patch("main.scrape_pages")
+@patch("main.export_jobs_json")
+@patch("main.export_jobs")
+def test_main_json_flag_exports_json(mock_export, mock_export_json, mock_scrape, capsys):
+    mock_jobs = [Job("Dev", "Corp", "Remote", "https://example.com")]
+    mock_scrape.return_value = mock_jobs
+
+    main(["--url", "https://custom.com", "--output", "out.csv", "--json"])
+
+    mock_export.assert_called_once_with(mock_jobs, Path("out.csv"))
+    mock_export_json.assert_called_once_with(mock_jobs, Path("out.json"))
+    captured = capsys.readouterr()
+    assert "Exported 1 jobs to out.json" in captured.out
+
+
+@patch("main.scrape_pages")
+@patch("main.export_jobs_json")
+@patch("main.export_jobs")
+def test_main_no_json_flag_skips_json(mock_export, mock_export_json, mock_scrape):
+    mock_jobs = [Job("Dev", "Corp", "Remote", "https://example.com")]
+    mock_scrape.return_value = mock_jobs
+
+    main(["--url", "https://custom.com", "--output", "out.csv"])
+
+    mock_export.assert_called_once_with(mock_jobs, Path("out.csv"))
+    mock_export_json.assert_not_called()
+
+
+@patch("main.scrape_pages")
+@patch("main.export_jobs_json")
+@patch("main.export_jobs")
+def test_main_json_flag_writes_empty_json(mock_export, mock_export_json, mock_scrape):
+    mock_scrape.return_value = []
+
+    main(["--json"])
+
+    mock_export.assert_called_once_with([], Path("data/jobs.csv"))
+    mock_export_json.assert_called_once_with([], Path("data/jobs.json"))

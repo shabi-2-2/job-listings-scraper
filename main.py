@@ -16,8 +16,9 @@ from src.analyzer import (
     load_jobs,
 )
 from src.dedup import deduplicate_jobs
-from src.exporter import export_jobs
+from src.exporter import export_jobs, export_jobs_json
 from src.filter import filter_jobs
+from src.models import Job
 from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
 
 DEFAULT_URL: str = "https://realpython.github.io/fake-jobs/"
@@ -77,12 +78,26 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Analyze existing job CSV data and generate charts",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Additionally export jobs as JSON next to the CSV output file",
+    )
     parsed = parser.parse_args(args)
     if not parsed.url.strip():
         parser.error("The --url argument must not be empty.")
     if parsed.pages < 1:
         parser.error("The --pages argument must be a positive integer (>= 1).")
     return parsed
+
+
+def export_results(jobs: list[Job], output: Path, json_output: bool = False) -> None:
+    export_jobs(jobs, output)
+    print(f"Exported {len(jobs)} jobs to {output}\n")
+    if json_output:
+        json_path = output.with_suffix(".json")
+        export_jobs_json(jobs, json_path)
+        print(f"Exported {len(jobs)} jobs to {json_path}\n")
 
 
 def run_scraper(
@@ -92,6 +107,7 @@ def run_scraper(
     keyword: str | None = None,
     location: str | None = None,
     company: str | None = None,
+    json_output: bool = False,
 ) -> None:
     print("Starting job scraper...\n")
     print(f"Target: {url}")
@@ -108,8 +124,7 @@ def run_scraper(
     jobs = scrape_pages(start_url=url, pages=pages, timeout=DEFAULT_TIMEOUT)
     if not jobs:
         print("Warning: No job listings were found.")
-        export_jobs(jobs, output)
-        print(f"Exported {len(jobs)} jobs to {output}\n")
+        export_results(jobs, output, json_output)
         print("Completed successfully.")
         return
 
@@ -122,14 +137,12 @@ def run_scraper(
     if keyword or location or company:
         if not jobs:
             print("No jobs matched the specified filters.")
-            export_jobs(jobs, output)
-            print(f"Exported {len(jobs)} jobs to {output}\n")
+            export_results(jobs, output, json_output)
             print("Completed successfully.")
             return
         print(f"After filtering: {len(jobs)} jobs.\n")
 
-    export_jobs(jobs, output)
-    print(f"Exported {len(jobs)} jobs to {output}\n")
+    export_results(jobs, output, json_output)
     print("Completed successfully.")
 
 
@@ -181,6 +194,7 @@ def main(args: Sequence[str] | None = None) -> None:
                 keyword=parsed_args.keyword,
                 location=parsed_args.location,
                 company=parsed_args.company,
+                json_output=parsed_args.json,
             )
     except (FileNotFoundError, ValueError) as err:
         logger.error("Analysis error: %s", err)

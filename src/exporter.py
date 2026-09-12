@@ -1,5 +1,7 @@
 import csv
+import json
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from typing import Iterable
 from src.models import Job
@@ -23,6 +25,22 @@ def export_jobs(jobs: Iterable[Job], output_path: str | Path) -> None:
                 writer.writerow([job.title, job.company, job.location, job.url])
                 count += 1
         logger.info("Successfully exported %d jobs to %s", count, path)
+    except OSError as err:
+        logger.error("File system error occurred while exporting to %s: %s", path, err)
+        raise
+
+
+def export_jobs_json(jobs: Iterable[Job], output_path: str | Path) -> None:
+    path = Path(output_path)
+    logger.info("Starting JSON export to %s", path)
+
+    payload = [asdict(job) for job in jobs]
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, mode="w", encoding="utf-8") as file:
+            json.dump(payload, file, indent=2)
+        logger.info("Successfully exported %d jobs to %s", len(payload), path)
     except OSError as err:
         logger.error("File system error occurred while exporting to %s: %s", path, err)
         raise

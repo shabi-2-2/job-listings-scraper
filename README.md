@@ -29,6 +29,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 09.1 — Pagination / Multi-Page Scraping**: COMPLETE
 - **Phase 09.2 — Job Filtering**: COMPLETE
 - **Phase 09.3 — Job Deduplication**: COMPLETE
+- **Phase 09.4 — Configurable Output**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -43,6 +44,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
   - [x] **Phase 09.1 — Pagination / Multi-Page Scraping** (COMPLETE)
   - [x] **Phase 09.2 — Job Filtering** (COMPLETE)
   - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
+  - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
 
 ---
 
@@ -113,6 +115,31 @@ python main.py --analyze --output data/custom_jobs.csv
 ```bash
 python main.py --help
 ```
+
+### 12. Export Jobs as JSON (Phase 09.4)
+Additionally exports the processed jobs to a JSON file placed next to the CSV output:
+```bash
+python main.py --json
+```
+
+Combined with a custom output path (parent directories are created automatically):
+```bash
+python main.py --output data/results/jobs.csv --json
+```
+Writes both `data/results/jobs.csv` and `data/results/jobs.json`.
+
+---
+
+## Configurable Output (Phase 09.4)
+
+### Custom CSV Output Path
+`--output` accepts any file path. The default remains `data/jobs.csv`. If the parent directory does not exist, it is created automatically using `pathlib.Path.mkdir(parents=True, exist_ok=True)`.
+
+### Optional JSON Export
+Passing `--json` additionally writes the same processed jobs as a JSON file whose path is derived from the CSV output by replacing the `.csv` suffix with `.json`. Each JSON object contains the exact `Job` model fields: `title`, `company`, `location`, and `url`.
+
+### Where JSON Export Lives in the Pipeline
+JSON export happens at the same stage as CSV export — after deduplication and filtering — so both files always contain the same processed dataset.
 
 ---
 
@@ -192,9 +219,9 @@ src/dedup.py (deduplicate_jobs)              → URL-based duplicate removal
     ↓
 src/filter.py (filter_jobs)                  → Case-insensitive keyword/location/company filtering
     ↓
-src/exporter.py (export_jobs)                → CSV formatting & file export
+src/exporter.py (export_jobs, export_jobs_json)  → CSV & optional JSON file export
     ↓
-data/jobs.csv                                → Persisted tabular dataset
+data/jobs.csv (+ data/jobs.json with --json)     → Persisted datasets
     ↓
 src/analyzer.py (run_analysis)               → Pandas aggregation & Matplotlib visualizations
     ↓
