@@ -48,14 +48,14 @@ class TestScraper(unittest.TestCase):
         mock_get.side_effect = requests.exceptions.Timeout("Connection timed out")
 
         with self.assertRaises(requests.exceptions.Timeout):
-            fetch_page("https://example.com")
+            fetch_page("https://example.com", retries=0)
 
     @patch("src.scraper.requests.get")
     def test_fetch_page_connection_error(self, mock_get):
         mock_get.side_effect = requests.exceptions.ConnectionError("Connection refused")
 
         with self.assertRaises(requests.exceptions.ConnectionError):
-            fetch_page("https://example.com")
+            fetch_page("https://example.com", retries=0)
 
     @patch("src.scraper.requests.get")
     def test_fetch_page_http_error(self, mock_get):
@@ -99,7 +99,7 @@ class TestScraper(unittest.TestCase):
         jobs = scrape_pages("https://example.com/jobs", pages=1)
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0].title, "Dev 1")
-        mock_fetch.assert_called_once_with("https://example.com/jobs", timeout=10.0)
+        mock_fetch.assert_called_once_with("https://example.com/jobs", timeout=10.0, retries=2)
 
     @patch("src.scraper.fetch_page")
     def test_scrape_pages_multiple_pages(self, mock_fetch):

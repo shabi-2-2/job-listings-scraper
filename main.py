@@ -19,7 +19,12 @@ from src.dedup import deduplicate_jobs
 from src.exporter import export_jobs, export_jobs_json
 from src.filter import filter_jobs
 from src.models import Job
-from src.scraper import DEFAULT_TIMEOUT, fetch_page, scrape_pages
+from src.scraper import (
+    DEFAULT_RETRIES,
+    DEFAULT_TIMEOUT,
+    fetch_page,
+    scrape_pages,
+)
 
 DEFAULT_URL: str = "https://realpython.github.io/fake-jobs/"
 DEFAULT_OUTPUT: Path = Path("data/jobs.csv")
@@ -107,11 +112,27 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Suppress log output below the WARNING level",
     )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT,
+        help="Request timeout in seconds per attempt (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=DEFAULT_RETRIES,
+        help="Maximum number of retries for transient request failures (default: %(default)s)",
+    )
     parsed = parser.parse_args(args)
     if not parsed.url.strip():
         parser.error("The --url argument must not be empty.")
     if parsed.pages < 1:
         parser.error("The --pages argument must be a positive integer (>= 1).")
+    if parsed.timeout <= 0:
+        parser.error("The --timeout argument must be a positive number.")
+    if parsed.retries < 0:
+        parser.error("The --retries argument must be a non-negative integer (>= 0).")
     return parsed
 
 
@@ -132,6 +153,8 @@ def run_scraper(
     location: str | None = None,
     company: str | None = None,
     json_output: bool = False,
+    timeout: float = DEFAULT_TIMEOUT,
+    retries: int = DEFAULT_RETRIES,
 ) -> None:
     logger.info(
         "Starting job scraping pipeline (target=%s, pages=%d, output=%s)",
@@ -140,11 +163,13 @@ def run_scraper(
         output,
     )
     logger.debug(
-        "Pipeline configuration: keyword=%s, location=%s, company=%s, json_output=%s",
+        "Pipeline configuration: keyword=%s, location=%s, company=%s, json_output=%s, timeout=%s, retries=%s",
         keyword,
         location,
         company,
         json_output,
+        timeout,
+        retries,
     )
     print("Starting job scraper...\n")
     print(f"Target: {url}")
@@ -158,7 +183,9 @@ def run_scraper(
         print(f"Company: {company}")
     print(f"Output: {output}\n")
 
-    jobs = scrape_pages(start_url=url, pages=pages, timeout=DEFAULT_TIMEOUT)
+    jobs = scrape_pages(
+        start_url=url, pages=pages, timeout=timeout, retries=retries
+    )
     logger.info("Scraping complete: found %d job listings", len(jobs))
     if not jobs:
         logger.warning("No job listings were found for %s", url)
@@ -248,6 +275,8 @@ def main(args: Sequence[str] | None = None) -> None:
                 location=parsed_args.location,
                 company=parsed_args.company,
                 json_output=parsed_args.json,
+                timeout=parsed_args.timeout,
+                retries=parsed_args.retries,
             )
     except (FileNotFoundError, ValueError) as err:
         logger.error("Analysis error: %s", err)

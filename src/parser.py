@@ -44,6 +44,9 @@ def parse_jobs(html: str, base_url: str = "") -> list[Job]:
         raw_url = link_elem.get("href", "").strip() if link_elem else ""
         url = urljoin(base_url, raw_url) if raw_url else ""
 
+        if not (title or company or location or url):
+            logger.warning("Job card contained no extractable data; keeping empty record.")
+
         jobs.append(
             Job(
                 title=title,

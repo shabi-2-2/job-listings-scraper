@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from main import DEFAULT_OUTPUT, DEFAULT_URL, main, parse_args
+from main import DEFAULT_OUTPUT, DEFAULT_RETRIES, DEFAULT_TIMEOUT, DEFAULT_URL, main, parse_args
 from src.models import Job
 
 
@@ -133,7 +133,7 @@ def test_main_execution_flow(mock_export, mock_scrape, capsys):
     main(["--url", "https://custom.com", "--output", "out.csv", "--pages", "2"])
 
     mock_scrape.assert_called_once_with(
-        start_url="https://custom.com", pages=2, timeout=10.0
+        start_url="https://custom.com", pages=2, timeout=10.0, retries=2
     )
     mock_export.assert_called_once_with(mock_jobs, Path("out.csv"))
 
@@ -165,7 +165,7 @@ def test_main_filters_with_pages(mock_export, mock_filter, mock_scrape, capsys):
     )
 
     mock_scrape.assert_called_once_with(
-        start_url="https://custom.com", pages=3, timeout=10.0
+        start_url="https://custom.com", pages=3, timeout=10.0, retries=2
     )
     mock_filter.assert_called_once_with(
         mock_jobs, keyword="python", location="remote", company=None
@@ -237,3 +237,33 @@ def test_main_json_flag_writes_empty_json(mock_export, mock_export_json, mock_sc
 
     mock_export.assert_called_once_with([], Path("data/jobs.csv"))
     mock_export_json.assert_called_once_with([], Path("data/jobs.json"))
+
+
+def test_parse_args_timeout_default():
+    args = parse_args([])
+    assert args.timeout == DEFAULT_TIMEOUT
+
+
+def test_parse_args_timeout_custom():
+    args = parse_args(["--timeout", "5.5"])
+    assert args.timeout == 5.5
+
+
+def test_parse_args_timeout_invalid():
+    with pytest.raises(SystemExit):
+        parse_args(["--timeout", "0"])
+
+
+def test_parse_args_retries_default():
+    args = parse_args([])
+    assert args.retries == DEFAULT_RETRIES
+
+
+def test_parse_args_retries_custom():
+    args = parse_args(["--retries", "3"])
+    assert args.retries == 3
+
+
+def test_parse_args_retries_invalid():
+    with pytest.raises(SystemExit):
+        parse_args(["--retries", "-1"])

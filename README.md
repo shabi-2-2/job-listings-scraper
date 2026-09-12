@@ -31,6 +31,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
 - **Phase 09.3 — Job Deduplication**: COMPLETE
 - **Phase 09.4 — Configurable Output**: COMPLETE
 - **Phase 09.5 — Application Logging**: COMPLETE
+- **Phase 09.6 — Robustness & Fault Tolerance**: COMPLETE
 
 ## Project Roadmap
 - [x] **Phase 01 — Project Setup & Web Fundamentals** (COMPLETE)
@@ -47,6 +48,7 @@ A Python-based web scraping application designed to extract, parse, model, expor
   - [x] **Phase 09.3 — Job Deduplication** (COMPLETE)
   - [x] **Phase 09.4 — Configurable Output** (COMPLETE)
   - [x] **Phase 09.5 — Application Logging** (COMPLETE)
+  - [x] **Phase 09.6 — Robustness & Fault Tolerance** (COMPLETE)
 
 ---
 
@@ -145,6 +147,39 @@ python main.py --quiet
 # or
 python main.py -q
 ```
+
+### 15. Timeout and Retry Configuration (Phase 09.6)
+Controls the per-attempt request timeout and how many retries are attempted for transient failures (timeouts, connection errors, HTTP 5xx):
+```bash
+python main.py --timeout 15 --retries 3
+```
+Defaults: `--timeout 10` (seconds), `--retries 2`.
+
+---
+
+## Robustness & Fault Tolerance (Phase 09.6)
+
+### Request Timeouts
+Every HTTP request carries an explicit timeout (`--timeout`, default 10 seconds) so no request can hang indefinitely. The timeout applies per attempt.
+
+### Retry with Backoff
+`fetch_page()` retries transient failures only:
+- Request timeouts and connection errors.
+- HTTP 5xx server responses (`500/501/502/503/504`).
+
+Permanent failures such as ordinary 4xx responses are never retried. Retries are bounded (`--retries`, default 2, for a maximum of `retries + 1` attempts), with a small fixed backoff delay between attempts (`RETRY_DELAY`, 0.5s). Each retry is logged at WARNING level; an ultimate failure is logged at ERROR.
+
+### Page-Level Fault Tolerance
+`scrape_pages()` processes each page independently. If a page still fails after its retry attempts are exhausted, that page is logged and skipped, and the scraper continues with the remaining pages. Jobs from successful pages are always retained.
+
+### Graceful Parsing
+`parse_jobs()` never crashes on malformed or incomplete HTML:
+- Empty or blank HTML returns an empty list.
+- No job cards (or unexpected structure) returns an empty list.
+- Cards missing title/company/location/url fields produce an empty record (never invented data) with a WARNING log.
+
+### Logging Integration
+Retry attempts and request failures use the Phase 09.5 logging system: DEBUG for detailed diagnostics, WARNING for recoverable (retried) failures, ERROR when an operation ultimately fails and pages are skipped.
 
 ---
 

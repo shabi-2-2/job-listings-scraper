@@ -10,6 +10,7 @@ Python web scraper that extracts, parses, models, deduplicates, filters, exports
 - Phase 09.3: deduplication (`deduplicate_jobs`) by job URL, order-preserving, applied before filtering
 - Phase 09.4: configurable output (`--output` custom CSV path, `--json` optional JSON export via `export_jobs_json`, automatic parent-dir creation via pathlib)
 - Phase 09.5: application logging (`setup_logging(level)` in main.py, module-level loggers everywhere, `-v/--verbose` -> DEBUG, `-q/--quiet` -> WARNING, default INFO)
+- Phase 09.6: robustness & fault tolerance (retry with backoff in `fetch_page`, retryable = Timeout/ConnectionError/HTTP 5xx, `--timeout` and `--retries` CLI args, page-level skip after retries exhausted in `scrape_pages`, WARNING for empty job cards in `parse_jobs`)
 
 There is NO current in-progress phase. Next work would be a new Phase (10).
 
@@ -27,7 +28,7 @@ main.py (argparse: --url --pages --keyword --location --company --output --analy
 
 ## Key Files
 - `main.py` — argparse CLI (`parse_args`), `setup_logging(level)`, `run_scraper`, `run_analysis`, `main` with centralized exception handling (exit code 1); verbosity flags `-v/--verbose` (DEBUG) and `-q/--quiet` (WARNING), default INFO
-- `src/scraper.py` — `fetch_page`, `scrape_pages`, `build_page_url`, `DEFAULT_TIMEOUT`
+- `src/scraper.py` — `fetch_page` (retry w/ backoff, `DEFAULT_TIMEOUT=10.0`, `DEFAULT_RETRIES=2`, `RETRY_DELAY=0.5`, `_should_retry` = Timeout/ConnectionError/HTTP 5xx), `scrape_pages` (page-level skip on failure), `build_page_url`
 - `src/parser.py` — `parse_jobs(html, base_url)`; handles empty HTML and missing cards gracefully
 - `src/models.py` — `Job` dataclass
 - `src/dedup.py` — `deduplicate_jobs(jobs)` (non-mutating, returns new list)
@@ -43,6 +44,7 @@ main.py (argparse: --url --pages --keyword --location --company --output --analy
 ## Commands
 - Default scrape: `python main.py`
 - Multi-page: `python main.py --pages 3`
+- Robustness: `python main.py --timeout 15 --retries 3`
 - Filters (AND): `python main.py --keyword python --location remote --company microsoft`
 - Custom output: `python main.py --output data/x.csv`
 - JSON export: `python main.py --json` (writes next to CSV; e.g. `data/x.json`)
